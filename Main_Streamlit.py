@@ -6,8 +6,8 @@ from PIL import Image
 import plotly.express as px
 
 # Load the trained model and data
-model_path = "Downloads/Resturant_Succsess_prediction.sav"
-data_path = "Cleaned_data2.pkl"
+model_path = "/Users/mohammedmahmood/Desktop/Code File/Streamlit code/Resturant_Succsess_prediction.sav"
+data_path = '/Users/mohammedmahmood/Desktop/Code File/Streamlit code/Cleaned_data2.pkl'
 
 with open(model_path, "rb") as file:
     Final_Model = pickle.load(file)
@@ -167,7 +167,7 @@ with tab1:
         'Dessert', 'Bakery', 'Bar/Pub', 'Street Food', 'Fine Dining',
         'Microbrewery', 'Lounge/Club'
     ], key="pred_rest_type" )
-    cuisines_count = st.selectbox("How many cuisines will your restaurant offer?", [1, 2, 2, 3, 5, 5, 6, 7], key="pred_cuisines_count")
+    cuisines_count = st.selectbox("How many cuisines will your restaurant offer?", [1, 2, 3, 4, 5, 6, 7, 8], key="pred_cuisines_count")
 
     # Auto detect cuisine type
     st.markdown("""
