@@ -6,7 +6,7 @@ from PIL import Image
 import plotly.express as px
 
 # Load the trained model and data
-model_path = "/Users/mohammedmahmood/Desktop/Code File/Streamlit code/Resturant_Succsess_prediction.sav"
+model_path = "Downloads/Resturant_Succsess_prediction.sav"
 data_path = '/Users/mohammedmahmood/Desktop/Code File/Streamlit code/Cleaned_data2.pkl'
 
 with open(model_path, "rb") as file:
