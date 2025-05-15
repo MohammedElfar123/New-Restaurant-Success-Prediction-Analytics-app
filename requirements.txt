@@ -1,10 +1,6 @@
-streamlit 
-pickle
-pandas 
-numpy 
-PIL 
-plotly.express 
+streamlit
+pandas
+numpy
+Pillow  
+plotly
 scikit-learn
-
-
-
