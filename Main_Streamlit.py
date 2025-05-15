@@ -107,7 +107,7 @@ with tab0:
         unsafe_allow_html=True
         )
     
-    image = Image.open("/Users/mohammedmahmood/Desktop/restaurant-1000x550.jpg")
+    image = Image.open("restaurant-1000x550.jpg")
     st.image(image, use_column_width=True)
     
     # Key points about the project 
