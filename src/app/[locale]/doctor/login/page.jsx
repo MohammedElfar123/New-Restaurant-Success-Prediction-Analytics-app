@@ -76,18 +76,6 @@ export default function DoctorLoginPage() {
             </CardDescription>
           </div>
 
-          {/* Demo Credentials */}
-          <div className="bg-muted/50 p-3 rounded-lg text-sm text-left">
-            <p className="font-medium text-muted-foreground mb-1">
-              {locale === "ar" ? "بيانات التجربة:" : "Demo Credentials:"}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              <strong>{tCommon("email")}:</strong> doctor@mawadk.qa
-            </p>
-            <p className="text-xs text-muted-foreground">
-              <strong>{tCommon("password")}:</strong> doctor123
-            </p>
-          </div>
         </CardHeader>
 
         <CardContent>
@@ -166,24 +154,6 @@ export default function DoctorLoginPage() {
             </div>
           </div>
 
-          {/* Other Login Options */}
-          <div className="mt-6 text-center space-y-2">
-            <div className="text-sm text-muted-foreground">
-              {locale === "ar" ? "أو تسجيل الدخول كـ:" : "Or login as:"}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" asChild className="flex-1">
-                <Link href="/admin/login">
-                  {locale === "ar" ? "مشرف" : "Admin"}
-                </Link>
-              </Button>
-              <Button variant="outline" size="sm" asChild className="flex-1">
-                <Link href="/hospital/login">
-                  {locale === "ar" ? "مستشفى" : "Hospital"}
-                </Link>
-              </Button>
-            </div>
-          </div>
         </CardContent>
       </Card>
 

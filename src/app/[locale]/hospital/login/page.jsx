@@ -128,19 +128,6 @@ export default function HospitalLoginPage() {
 
             {/* Form */}
             <div className="p-8">
-              {/* Demo Credentials */}
-              <div className="mb-6 p-4 rounded-xl bg-secondary/5 border border-secondary/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-4 h-4 text-secondary" />
-                  <p className="font-semibold text-sm text-secondary">
-                    {locale === "ar" ? "بيانات التجربة" : "Demo Credentials"}
-                  </p>
-                </div>
-                <div className="space-y-1 text-xs text-muted-foreground">
-                  <p><strong>{tCommon("email")}:</strong> hospital@mawadk.qa</p>
-                  <p><strong>{tCommon("password")}:</strong> hospital123</p>
-                </div>
-              </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Email Field */}
@@ -197,37 +184,6 @@ export default function HospitalLoginPage() {
                 </Button>
               </form>
 
-              {/* Divider */}
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-muted"></div>
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-4 text-muted-foreground font-medium">
-                    {locale === "ar" ? "أو تسجيل الدخول كـ" : "Or login as"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Other Login Options */}
-              <div className="grid grid-cols-2 gap-3">
-                <Link href="/admin/login">
-                  <Button
-                    variant="outline"
-                    className="w-full h-11 border-2 hover:border-secondary hover:bg-secondary/5 hover:text-secondary transition-all duration-300"
-                  >
-                    {locale === "ar" ? "مشرف" : "Admin"}
-                  </Button>
-                </Link>
-                <Link href="/doctor/login">
-                  <Button
-                    variant="outline"
-                    className="w-full h-11 border-2 hover:border-secondary hover:bg-secondary/5 hover:text-secondary transition-all duration-300"
-                  >
-                    {locale === "ar" ? "طبيب" : "Doctor"}
-                  </Button>
-                </Link>
-              </div>
             </div>
           </div>
 
