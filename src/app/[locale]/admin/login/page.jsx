@@ -172,7 +172,7 @@ export default function AdminLoginPage() {
 
           {/* Footer */}
           <p className="text-center text-muted-foreground/60 text-xs mt-10">
-            &copy; {new Date().getFullYear()} Mawadk.{" "}
+            &copy; {new Date().getFullYear()} Mawadk.{" " /* v2 */}
             {isRTL ? "جميع الحقوق محفوظة" : "All rights reserved"}
           </p>
         </div>
