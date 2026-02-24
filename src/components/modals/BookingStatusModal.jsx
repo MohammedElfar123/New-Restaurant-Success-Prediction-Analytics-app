@@ -28,23 +28,16 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Activity,
-  UserCheck,
-  UserX,
   CheckCircle2,
   AlertTriangle,
 } from "lucide-react";
 
-// Status icon mapping
+// Status icon mapping (lowercase to match API values)
 const StatusIcons = {
-  Pending: Clock,
-  Approved: CheckCircle,
-  CheckedIn: UserCheck,
-  InProgress: Activity,
-  Completed: CheckCircle2,
-  Cancelled: XCircle,
-  NoShow: UserX,
-  Rescheduled: RefreshCw,
+  pending: Clock,
+  confirmed: CheckCircle,
+  completed: CheckCircle2,
+  cancelled: XCircle,
 };
 
 export default function BookingStatusModal({ open, onClose, booking, onStatusUpdated }) {
@@ -64,7 +57,7 @@ export default function BookingStatusModal({ open, onClose, booking, onStatusUpd
     : [];
 
   // Check if selected status requires a cancellation reason
-  const requiresReason = selectedStatus === "Cancelled" || selectedStatus === "NoShow";
+  const requiresReason = selectedStatus === "cancelled";
 
   useEffect(() => {
     if (open) {
@@ -228,7 +221,7 @@ export default function BookingStatusModal({ open, onClose, booking, onStatusUpd
           )}
 
           {/* Warning for destructive actions */}
-          {(selectedStatus === "Cancelled" || selectedStatus === "NoShow") && (
+          {selectedStatus === "cancelled" && (
             <div className="bg-rose-50 border border-rose-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-rose-600 flex-shrink-0 mt-0.5" />
@@ -237,11 +230,8 @@ export default function BookingStatusModal({ open, onClose, booking, onStatusUpd
                     {t("warningTitle") || "Warning"}
                   </p>
                   <p className="text-xs text-rose-600 mt-1">
-                    {selectedStatus === "Cancelled"
-                      ? t("cancelWarning") ||
-                        "This action cannot be undone. The booking will be permanently cancelled."
-                      : t("noShowWarning") ||
-                        "This action cannot be undone. The customer will be marked as no-show."}
+                    {t("cancelWarning") ||
+                      "This action cannot be undone. The booking will be permanently cancelled."}
                   </p>
                 </div>
               </div>
@@ -264,7 +254,7 @@ export default function BookingStatusModal({ open, onClose, booking, onStatusUpd
             onClick={handleSubmit}
             disabled={loading || !selectedStatus || allowedTransitions.length === 0}
             className={
-              selectedStatus === "Cancelled" || selectedStatus === "NoShow"
+              selectedStatus === "cancelled"
                 ? "bg-rose-600 hover:bg-rose-700"
                 : ""
             }

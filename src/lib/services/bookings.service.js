@@ -13,7 +13,6 @@ const BookingsService = {
     CONFIRMED: "confirmed",
     COMPLETED: "completed",
     CANCELLED: "cancelled",
-    NO_SHOW: "no_show",
   },
 
   /**
@@ -30,10 +29,9 @@ const BookingsService = {
    */
   STATUS_TRANSITIONS: {
     pending: ["confirmed", "cancelled"],
-    confirmed: ["completed", "cancelled", "no_show"],
+    confirmed: ["completed", "cancelled"],
     completed: [], // Final state
     cancelled: [], // Final state
-    no_show: [], // Final state
   },
 
   /**
@@ -123,17 +121,17 @@ const BookingsService = {
 
   /**
    * Update Booking Status
-   * POST /bookings/{id}/update-status
+   * GET /bookings/update-status/{id}?status=confirmed
    */
   updateBookingStatus: async (id, status, cancellation_reason_id = null) => {
     try {
-      const payload = { status };
+      const params = { status };
 
-      if ((status === "cancelled" || status === "no_show") && cancellation_reason_id) {
-        payload.cancellation_reason_id = cancellation_reason_id;
+      if (status === "cancelled" && cancellation_reason_id) {
+        params.reason_cancellation_id = cancellation_reason_id;
       }
 
-      const response = await apiClient.post(`/bookings/${id}/update-status`, payload);
+      const response = await apiClient.get(`/bookings/update-status/${id}`, { params });
 
       if (response.data?.status === "success") {
         return {
@@ -210,7 +208,6 @@ const BookingsService = {
       completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
       cancelled: "bg-rose-50 text-rose-700 border-rose-200",
       noshow: "bg-slate-50 text-slate-700 border-slate-200",
-      no_show: "bg-slate-50 text-slate-700 border-slate-200",
       rescheduled: "bg-orange-50 text-orange-700 border-orange-200",
     };
     return colors[normalizedStatus] || "bg-slate-50 text-slate-700 border-slate-200";

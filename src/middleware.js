@@ -44,7 +44,7 @@ export default function middleware(request) {
 
   // If authenticated and trying to access login page, redirect to appropriate dashboard
   if (token && isPublicRoute) {
-    let dashboardPath = "/admin/dashboard";
+    let dashboardPath = "/admin/users";
 
     if (userType === "hospital") {
       dashboardPath = "/hospital/dashboard";
