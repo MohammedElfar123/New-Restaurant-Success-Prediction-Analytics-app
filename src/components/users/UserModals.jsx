@@ -18,7 +18,7 @@ import {
   User, Mail, Phone, Calendar, Clock,
   CheckCircle, XCircle, Loader2, Trash2, Shield,
   CalendarDays, Receipt, TrendingUp, Activity, UserCog,
-  Globe
+  Globe, RefreshCw
 } from "lucide-react";
 
 // ============================================
@@ -639,6 +639,64 @@ export function DeleteConfirmModal({
                 <>
                   <Trash2 className="h-4 w-4" />
                   {t("delete")}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// ============================================
+// RESTORE CONFIRMATION MODAL
+// ============================================
+export function RestoreConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  userName,
+  isRestoring = false,
+}) {
+  const t = useTranslations("users.modal");
+
+  return (
+    <Modal open={isOpen} onOpenChange={onClose}>
+      <ModalContent className="max-w-md">
+        <VisuallyHidden>
+          <ModalTitle>{t("restoreTitle")}</ModalTitle>
+        </VisuallyHidden>
+        <div className="p-6 text-center">
+          <div className="h-16 w-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <RefreshCw className="h-8 w-8 text-emerald-600" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">
+            {t("restoreTitle")}
+          </h3>
+          <p className="text-slate-500 mb-6">
+            {t("restoreConfirm")} <span className="font-semibold text-slate-700">{userName}</span>?
+            <br />
+            <span className="text-sm text-emerald-600">{t("restoreHint")}</span>
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button variant="outline" onClick={onClose} className="min-w-[100px]">
+              {t("cancel")}
+            </Button>
+            <Button
+              onClick={onConfirm}
+              disabled={isRestoring}
+              className="min-w-[100px] gap-2 bg-emerald-600 hover:bg-emerald-700"
+            >
+              {isRestoring ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t("restoring")}
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  {t("restore")}
                 </>
               )}
             </Button>

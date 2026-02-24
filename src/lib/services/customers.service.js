@@ -212,8 +212,8 @@ const CustomersService = {
    */
   getDeletedCustomers: async (params = {}) => {
     try {
-      const response = await apiClient.get("/customers", {
-        params: { ...params, is_deleted: 1 },
+      const response = await apiClient.get("/customers/index-deleted", {
+        params,
       });
 
       if (response.data?.status === "success") {

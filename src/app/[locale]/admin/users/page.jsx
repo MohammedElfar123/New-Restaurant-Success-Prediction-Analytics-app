@@ -10,11 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import {
   UserViewModal,
   DeleteConfirmModal,
+  RestoreConfirmModal,
 } from "@/components/users/UserModals";
 import {
   Search, Trash2, Eye, Download, MoreVertical, Users,
   UserCheck, UserPlus, Mail, Phone, CheckCircle, XCircle, Loader2,
-  RefreshCw
+  RefreshCw, Archive
 } from "lucide-react";
 import CustomersService from "@/lib/services/customers.service";
 import toast from "react-hot-toast";
@@ -25,11 +26,15 @@ export default function UsersPage() {
 
   // State
   const [customers, setCustomers] = useState([]);
+  const [deletedCustomers, setDeletedCustomers] = useState([]);
   const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
+  const [deletedMeta, setDeletedMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [reports, setReports] = useState({ total_users: "0", active_users: { value: "0", percentage: 0 }, new_this_month: { value: "0", growth: 0 } });
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [deletedPage, setDeletedPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState("active"); // "active" | "deleted"
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = useRef(null);
   const itemsPerPage = 10;
@@ -37,27 +42,41 @@ export default function UsersPage() {
   // Modal states
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
+  const [customerToRestore, setCustomerToRestore] = useState(null);
 
   // Fetch customers from API
   const fetchCustomers = async (page = 1, search = "") => {
     setIsLoading(true);
     try {
-      const result = await CustomersService.getCustomers({
-        page,
-        per_page: itemsPerPage,
-        search: search || undefined,
-      });
+      const [activeResult, deletedResult] = await Promise.all([
+        CustomersService.getCustomers({
+          page,
+          per_page: itemsPerPage,
+          search: search || undefined,
+        }),
+        CustomersService.getDeletedCustomers({
+          page: deletedPage,
+          per_page: itemsPerPage,
+          search: search || undefined,
+        }),
+      ]);
 
-      if (result.success) {
-        setCustomers(result.data.items || []);
-        setMeta(result.data.meta || { current_page: 1, last_page: 1, total: 0 });
-        setReports(result.data.reports || { total_users: "0", active_users: { value: "0", percentage: 0 }, new_this_month: { value: "0", growth: 0 } });
+      if (activeResult.success) {
+        setCustomers(activeResult.data.items || []);
+        setMeta(activeResult.data.meta || { current_page: 1, last_page: 1, total: 0 });
+        setReports(activeResult.data.reports || { total_users: "0", active_users: { value: "0", percentage: 0 }, new_this_month: { value: "0", growth: 0 } });
       } else {
-        toast.error(result.message);
+        toast.error(activeResult.message);
+      }
+
+      if (deletedResult.success) {
+        setDeletedCustomers(deletedResult.data.items || []);
+        setDeletedMeta(deletedResult.data.meta || { current_page: 1, last_page: 1, total: 0 });
       }
     } catch (error) {
       console.error("Error fetching customers:", error);
@@ -70,12 +89,13 @@ export default function UsersPage() {
   // Initial fetch
   useEffect(() => {
     fetchCustomers(currentPage, searchQuery);
-  }, [currentPage]);
+  }, [currentPage, deletedPage]);
 
   // Search with debounce
   useEffect(() => {
     const timer = setTimeout(() => {
       setCurrentPage(1);
+      setDeletedPage(1);
       fetchCustomers(1, searchQuery);
     }, 500);
 
@@ -129,6 +149,36 @@ export default function UsersPage() {
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("حدث خطأ أثناء الحذف");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle restore click
+  const handleRestoreClick = (customer) => {
+    setOpenDropdown(null);
+    setCustomerToRestore(customer);
+    setIsRestoreModalOpen(true);
+  };
+
+  // Confirm restore
+  const handleConfirmRestore = async () => {
+    if (!customerToRestore) return;
+
+    setIsSubmitting(true);
+    try {
+      const result = await CustomersService.restoreCustomer(customerToRestore.id);
+      if (result.success) {
+        toast.success(result.message || "تم استعادة المستخدم بنجاح");
+        setIsRestoreModalOpen(false);
+        setCustomerToRestore(null);
+        fetchCustomers(currentPage, searchQuery);
+      } else {
+        toast.error(result.message || "فشل استعادة المستخدم");
+      }
+    } catch (error) {
+      console.error("Restore error:", error);
+      toast.error("حدث خطأ أثناء استعادة المستخدم");
     } finally {
       setIsSubmitting(false);
     }
@@ -201,6 +251,12 @@ export default function UsersPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Get current list and pagination based on view mode
+  const currentList = viewMode === "active" ? customers : deletedCustomers;
+  const currentMeta = viewMode === "active" ? meta : deletedMeta;
+  const activePage = viewMode === "active" ? currentPage : deletedPage;
+  const setActivePage = viewMode === "active" ? setCurrentPage : setDeletedPage;
+
   return (
     <DashboardLayout requiredUserType="admin">
       {/* Page Header */}
@@ -216,7 +272,7 @@ export default function UsersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <Card className="border-slate-200 hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -276,6 +332,25 @@ export default function UsersPage() {
             </p>
           </CardContent>
         </Card>
+
+        <Card className="border-slate-200 hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-slate-600">{t("deletedUsers")}</CardTitle>
+              <div className="h-10 w-10 bg-rose-50 rounded-lg flex items-center justify-center">
+                <Archive className="h-5 w-5 text-rose-600" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-slate-900">
+              {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (deletedMeta.total || 0)}
+            </div>
+            <p className="text-xs text-rose-600 mt-1">
+              {t("canRestore")}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Main Card */}
@@ -285,9 +360,31 @@ export default function UsersPage() {
           <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <h3 className="font-semibold text-slate-900">{t("allUsers")}</h3>
+                {/* View Mode Toggle */}
+                <div className="flex items-center bg-white rounded-lg border border-slate-200 p-1">
+                  <button
+                    onClick={() => setViewMode("active")}
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      viewMode === "active"
+                        ? "bg-primary text-white"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    {t("activeTab")}
+                  </button>
+                  <button
+                    onClick={() => setViewMode("deleted")}
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      viewMode === "deleted"
+                        ? "bg-rose-500 text-white"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    {t("deletedTab")}
+                  </button>
+                </div>
                 <Badge variant="secondary" className="bg-slate-200 text-slate-700">
-                  {meta.total || 0}
+                  {currentMeta.total || currentList.length || 0}
                 </Badge>
                 <Button
                   variant="ghost"
@@ -322,11 +419,15 @@ export default function UsersPage() {
                   <p className="text-slate-500">{t("loadingData")}</p>
                 </div>
               </div>
-            ) : customers.length === 0 ? (
+            ) : currentList.length === 0 ? (
               <div className="text-center py-16">
                 <Users className="h-16 w-16 text-slate-200 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-slate-900 mb-2">{t("noUsers")}</h3>
-                <p className="text-slate-500">{t("noUsersFound")}</p>
+                <h3 className="text-lg font-medium text-slate-900 mb-2">
+                  {viewMode === "active" ? t("noUsers") : t("noDeletedUsers")}
+                </h3>
+                <p className="text-slate-500">
+                  {viewMode === "active" ? t("noUsersFound") : t("noDeletedUsersDesc")}
+                </p>
               </div>
             ) : (
               <table className="w-full table-fixed">
@@ -336,27 +437,26 @@ export default function UsersPage() {
                     <th className="py-3.5 px-4 text-sm font-semibold text-slate-600 text-start w-[18%]">{t("user")}</th>
                     <th className="py-3.5 px-4 text-sm font-semibold text-slate-600 text-start w-[18%]">{t("contact")}</th>
                     <th className="py-3.5 px-4 text-sm font-semibold text-slate-600 text-center w-[12%]">{t("bookings")}</th>
-                    <th className="py-3.5 px-4 text-sm font-semibold text-slate-600 text-center w-[16%]">{t("dateJoined")}</th>
+                    <th className="py-3.5 px-4 text-sm font-semibold text-slate-600 text-center w-[16%]">
+                      {viewMode === "active" ? t("dateJoined") : t("dateDeleted")}
+                    </th>
                     <th className="py-3.5 px-4 text-sm font-semibold text-slate-600 text-center w-[10%]">{t("status")}</th>
                     <th className="py-3.5 px-4 text-sm font-semibold text-slate-600 text-center w-[60px]">{t("actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {customers.map((customer, index) => (
+                  {currentList.map((customer, index) => (
                     <tr
                       key={customer.id}
                       className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
                     >
                       <td className="py-3 px-4 text-center w-[50px]">
                         <span className="text-sm text-slate-500 font-medium">
-                          {(currentPage - 1) * itemsPerPage + index + 1}
+                          {(activePage - 1) * itemsPerPage + index + 1}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-start w-[18%]">
-                        <button
-                          onClick={() => handleViewDetails(customer.id)}
-                          className="flex items-center gap-3 hover:opacity-80 transition-opacity w-full"
-                        >
+                        <div className="flex items-center gap-3">
                           {customer.image ? (
                             <img
                               src={customer.image}
@@ -373,7 +473,7 @@ export default function UsersPage() {
                           <div className="min-w-0">
                             <div className="font-medium text-slate-900 truncate">{customer.name}</div>
                           </div>
-                        </button>
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-start w-[18%]">
                         <div className="space-y-1">
@@ -398,19 +498,26 @@ export default function UsersPage() {
                       </td>
                       <td className="py-3 px-4 text-center w-[16%]">
                         <div className="text-sm text-slate-600">
-                          {customer.created_at}
+                          {viewMode === "active" ? customer.created_at : (customer.deleted_at || customer.created_at)}
                         </div>
                       </td>
                       <td className="py-3 px-4 text-center w-[10%]">
-                        {customer.status ? (
-                          <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border border-emerald-200 gap-1 text-xs">
-                            <CheckCircle className="h-3 w-3" />
-                            {t("active")}
-                          </Badge>
+                        {viewMode === "active" ? (
+                          customer.status ? (
+                            <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border border-emerald-200 gap-1 text-xs">
+                              <CheckCircle className="h-3 w-3" />
+                              {t("active")}
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-rose-50 text-rose-700 hover:bg-rose-50 border border-rose-200 gap-1 text-xs">
+                              <XCircle className="h-3 w-3" />
+                              {t("inactive")}
+                            </Badge>
+                          )
                         ) : (
-                          <Badge className="bg-rose-50 text-rose-700 hover:bg-rose-50 border border-rose-200 gap-1 text-xs">
-                            <XCircle className="h-3 w-3" />
-                            {t("inactive")}
+                          <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100 border border-slate-200 gap-1 text-xs">
+                            <Archive className="h-3 w-3" />
+                            {t("deleted")}
                           </Badge>
                         )}
                       </td>
@@ -435,37 +542,49 @@ export default function UsersPage() {
                                 className="absolute end-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50"
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                <button
-                                  className="w-full px-3 py-2 text-start text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
-                                  onClick={() => handleViewDetails(customer.id)}
-                                >
-                                  <Eye className="h-4 w-4 text-slate-400" />
-                                  {t("viewDetails")}
-                                </button>
-                                <button
-                                  className="w-full px-3 py-2 text-start text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
-                                  onClick={() => handleToggleStatus(customer.id)}
-                                >
-                                  {customer.status ? (
-                                    <>
-                                      <XCircle className="h-4 w-4 text-amber-500" />
-                                      {t("deactivateAccount")}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CheckCircle className="h-4 w-4 text-emerald-500" />
-                                      {t("activateAccount")}
-                                    </>
-                                  )}
-                                </button>
-                                <div className="border-t border-slate-100 my-1" />
-                                <button
-                                  className="w-full px-3 py-2 text-start text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors"
-                                  onClick={() => handleDeleteClick(customer)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  {t("deleteUser")}
-                                </button>
+                                {viewMode === "active" ? (
+                                  <>
+                                    <button
+                                      className="w-full px-3 py-2 text-start text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                                      onClick={() => handleViewDetails(customer.id)}
+                                    >
+                                      <Eye className="h-4 w-4 text-slate-400" />
+                                      {t("viewDetails")}
+                                    </button>
+                                    <button
+                                      className="w-full px-3 py-2 text-start text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                                      onClick={() => handleToggleStatus(customer.id)}
+                                    >
+                                      {customer.status ? (
+                                        <>
+                                          <XCircle className="h-4 w-4 text-amber-500" />
+                                          {t("deactivateAccount")}
+                                        </>
+                                      ) : (
+                                        <>
+                                          <CheckCircle className="h-4 w-4 text-emerald-500" />
+                                          {t("activateAccount")}
+                                        </>
+                                      )}
+                                    </button>
+                                    <div className="border-t border-slate-100 my-1" />
+                                    <button
+                                      className="w-full px-3 py-2 text-start text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors"
+                                      onClick={() => handleDeleteClick(customer)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      {t("deleteUser")}
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    className="w-full px-3 py-2 text-start text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-2 transition-colors"
+                                    onClick={() => handleRestoreClick(customer)}
+                                  >
+                                    <RefreshCw className="h-4 w-4" />
+                                    {t("restoreUser")}
+                                  </button>
+                                )}
                               </div>
                             )}
                           </div>
@@ -479,32 +598,32 @@ export default function UsersPage() {
           </div>
 
           {/* Pagination */}
-          {meta.last_page > 1 && (
+          {currentMeta.last_page > 1 && (
             <div className="flex flex-col md:flex-row items-center justify-between px-6 py-4 border-t border-slate-200 gap-4">
               <div className="text-sm text-slate-500">
-                {t("page")} {meta.current_page} {t("of")} {meta.last_page} ({meta.total} {t("userCount")})
+                {t("page")} {currentMeta.current_page} {t("of")} {currentMeta.last_page} ({currentMeta.total} {t("userCount")})
               </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={currentPage === 1 || isLoading}
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={activePage === 1 || isLoading}
+                  onClick={() => setActivePage((p) => Math.max(1, p - 1))}
                   className="h-9"
                 >
                   {t("prev")}
                 </Button>
 
-                {Array.from({ length: Math.min(5, meta.last_page) }, (_, i) => {
+                {Array.from({ length: Math.min(5, currentMeta.last_page) }, (_, i) => {
                   let pageNum;
-                  if (meta.last_page <= 5) {
+                  if (currentMeta.last_page <= 5) {
                     pageNum = i + 1;
-                  } else if (currentPage <= 3) {
+                  } else if (activePage <= 3) {
                     pageNum = i + 1;
-                  } else if (currentPage >= meta.last_page - 2) {
-                    pageNum = meta.last_page - 4 + i;
+                  } else if (activePage >= currentMeta.last_page - 2) {
+                    pageNum = currentMeta.last_page - 4 + i;
                   } else {
-                    pageNum = currentPage - 2 + i;
+                    pageNum = activePage - 2 + i;
                   }
 
                   return (
@@ -514,18 +633,18 @@ export default function UsersPage() {
                       size="sm"
                       disabled={isLoading}
                       className={`h-9 w-9 p-0 ${
-                        currentPage === pageNum
+                        activePage === pageNum
                           ? "bg-primary text-white border-primary hover:bg-primary/90 hover:text-white"
                           : ""
                       }`}
-                      onClick={() => setCurrentPage(pageNum)}
+                      onClick={() => setActivePage(pageNum)}
                     >
                       {pageNum}
                     </Button>
                   );
                 })}
 
-                {meta.last_page > 5 && currentPage < meta.last_page - 2 && (
+                {currentMeta.last_page > 5 && activePage < currentMeta.last_page - 2 && (
                   <>
                     <span className="text-slate-400 px-1">...</span>
                     <Button
@@ -533,9 +652,9 @@ export default function UsersPage() {
                       size="sm"
                       disabled={isLoading}
                       className="h-9 w-9 p-0"
-                      onClick={() => setCurrentPage(meta.last_page)}
+                      onClick={() => setActivePage(currentMeta.last_page)}
                     >
-                      {meta.last_page}
+                      {currentMeta.last_page}
                     </Button>
                   </>
                 )}
@@ -543,8 +662,8 @@ export default function UsersPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={currentPage === meta.last_page || isLoading}
-                  onClick={() => setCurrentPage((p) => Math.min(meta.last_page, p + 1))}
+                  disabled={activePage === currentMeta.last_page || isLoading}
+                  onClick={() => setActivePage((p) => Math.min(currentMeta.last_page, p + 1))}
                   className="h-9"
                 >
                   {t("nextPage")}
@@ -581,6 +700,18 @@ export default function UsersPage() {
         onConfirm={handleConfirmDelete}
         userName={customerToDelete?.name}
         isDeleting={isSubmitting}
+      />
+
+      {/* Restore Confirmation Modal */}
+      <RestoreConfirmModal
+        isOpen={isRestoreModalOpen}
+        onClose={() => {
+          setIsRestoreModalOpen(false);
+          setCustomerToRestore(null);
+        }}
+        onConfirm={handleConfirmRestore}
+        userName={customerToRestore?.name}
+        isRestoring={isSubmitting}
       />
     </DashboardLayout>
   );
