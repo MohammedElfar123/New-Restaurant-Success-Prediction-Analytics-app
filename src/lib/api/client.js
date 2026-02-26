@@ -142,9 +142,11 @@ apiClient.interceptors.response.use(
   }
 );
 
-// Handle logout
+// Handle logout - redirect to the correct login page based on user type
 function handleLogout() {
   if (typeof window !== "undefined") {
+    const userType = localStorage.getItem("user_type");
+
     localStorage.removeItem("access_token");
     localStorage.removeItem("user_type");
     localStorage.removeItem("auth-storage");
@@ -153,9 +155,16 @@ function handleLogout() {
     document.cookie = "access_token=; path=/; max-age=0";
     document.cookie = "user_type=; path=/; max-age=0";
 
-    // Redirect to login
+    // Determine locale from URL
+    const pathLocale = window.location.pathname.split("/")[1];
+    const locale = ["ar", "en"].includes(pathLocale) ? pathLocale : "ar";
+
+    // Redirect to appropriate login page
+    const isProvider = userType === "provider" || userType === "doctor" || userType === "hospital";
+    const loginPath = isProvider ? `/${locale}/provider/login` : `/${locale}/admin/login`;
+
     toast.error("انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى");
-    window.location.href = "/ar/admin/login";
+    window.location.href = loginPath;
   }
 }
 

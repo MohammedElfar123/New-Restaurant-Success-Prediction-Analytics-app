@@ -92,7 +92,19 @@ export default function ProviderDoctorFormModal({
         ar_short_description: arTrans.short_description || "",
         en_name: enTrans.name || "",
         en_short_description: enTrans.short_description || "",
-        schedules: doctor.schedules || ProviderDoctorsService.getDefaultSchedule(),
+        schedules: (() => {
+          const apiSchedules = doctor.schedules || [];
+          const workingDays = new Set(apiSchedules.map(s => s.day_of_week));
+          return Array.from({ length: 7 }, (_, i) => {
+            const existing = apiSchedules.find(s => s.day_of_week === i);
+            return {
+              day_of_week: i,
+              open_time: existing ? (existing.open_time || "08:00").substring(0, 5) : "08:00",
+              close_time: existing ? (existing.close_time || "17:00").substring(0, 5) : "17:00",
+              is_working: workingDays.has(i),
+            };
+          });
+        })(),
         image: null,
       });
       setImagePreview(doctor.image);
@@ -461,31 +473,47 @@ export default function ProviderDoctorFormModal({
               {formData.schedules.map((schedule, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl"
+                  className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
+                    schedule.is_working !== false
+                      ? "bg-white border-slate-200"
+                      : "bg-slate-50 border-slate-100"
+                  }`}
                 >
-                  <div className="w-24 font-medium text-slate-900">
+                  <Switch
+                    checked={schedule.is_working !== false}
+                    onCheckedChange={(checked) => handleScheduleChange(index, "is_working", checked)}
+                  />
+                  <span className={`w-20 text-sm font-medium flex-shrink-0 ${
+                    schedule.is_working !== false ? "text-slate-900" : "text-slate-400"
+                  }`}>
                     {ProviderDoctorsService.getDayName(index, locale)}
-                  </div>
-                  <div className="flex-1 grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs text-slate-500 mb-1 block">{t("openTime")}</Label>
-                      <Input
-                        type="time"
-                        value={schedule.open_time}
-                        onChange={(e) => handleScheduleChange(index, "open_time", e.target.value)}
-                        className="h-9"
-                      />
+                  </span>
+                  {schedule.is_working !== false ? (
+                    <div className="flex-1 grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs text-slate-500 mb-1 block">{t("openTime")}</Label>
+                        <Input
+                          type="time"
+                          value={schedule.open_time}
+                          onChange={(e) => handleScheduleChange(index, "open_time", e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-slate-500 mb-1 block">{t("closeTime")}</Label>
+                        <Input
+                          type="time"
+                          value={schedule.close_time}
+                          onChange={(e) => handleScheduleChange(index, "close_time", e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-xs text-slate-500 mb-1 block">{t("closeTime")}</Label>
-                      <Input
-                        type="time"
-                        value={schedule.close_time}
-                        onChange={(e) => handleScheduleChange(index, "close_time", e.target.value)}
-                        className="h-9"
-                      />
-                    </div>
-                  </div>
+                  ) : (
+                    <span className="text-sm text-slate-400 flex-1">
+                      {locale === "ar" ? "يوم إجازة" : "Day off"}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>

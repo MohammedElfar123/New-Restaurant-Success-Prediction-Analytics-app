@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, useParams } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -36,7 +36,7 @@ export default function ProvidersPage() {
   const dropdownRef = useRef(null);
 
   // Fetch providers
-  const fetchProviders = async () => {
+  const fetchProviders = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = {
@@ -63,24 +63,27 @@ export default function ProvidersPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, searchQuery, typeFilter, statusFilter, t]);
 
   // Initial fetch and on filter/page change
   useEffect(() => {
     fetchProviders();
-  }, [currentPage, typeFilter, statusFilter]);
+  }, [fetchProviders]);
 
   // Search with debounce
+  const searchTimerRef = useRef(null);
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (currentPage === 1) {
-        fetchProviders();
-      } else {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      if (currentPage !== 1) {
         setCurrentPage(1);
       }
     }, 500);
 
-    return () => clearTimeout(timer);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   // Handle view details

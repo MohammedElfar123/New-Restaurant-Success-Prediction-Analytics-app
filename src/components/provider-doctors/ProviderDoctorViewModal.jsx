@@ -236,7 +236,7 @@ export default function ProviderDoctorViewModal({
                       {ProviderDoctorsService.getDayName(schedule.day_of_week || index, locale)}
                     </span>
                     <span className="text-slate-500 text-sm">
-                      {schedule.open_time} - {schedule.close_time}
+                      {(schedule.open_time || "").substring(0, 5)} - {(schedule.close_time || "").substring(0, 5)}
                     </span>
                   </div>
                 ))}

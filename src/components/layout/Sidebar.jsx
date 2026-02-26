@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { usePermissions, PERMISSIONS } from "@/hooks/usePermissions";
+import { useAuthStore } from "@/stores/authStore";
+import { useNotificationStore } from "@/stores/notificationStore";
 import {
   LayoutDashboard,
   Users,
@@ -28,6 +30,7 @@ import {
   FolderTree,
   HelpCircle,
   Cog,
+  BarChart3,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -37,12 +40,14 @@ export default function Sidebar({ userType, locale }) {
   const [hoveredItem, setHoveredItem] = useState(null);
   const [settingsExpanded, setSettingsExpanded] = useState(false);
   const { hasPermission, isSuperAdmin } = usePermissions();
+  const { permissionsLoaded } = useAuthStore();
+  const { newDoctorCount, newClinicCount, newHospitalCount } = useNotificationStore();
 
   // Check if current path is in settings section
   const isInSettingsSection = pathname.includes("/admin/settings");
 
   // Auto-expand settings if we're in settings section
-  useMemo(() => {
+  useEffect(() => {
     if (isInSettingsSection) {
       setSettingsExpanded(true);
     }
@@ -110,7 +115,7 @@ export default function Sidebar({ userType, locale }) {
       icon: Stethoscope,
       color: "text-emerald-500",
       bgColor: "bg-emerald-50",
-      badge: null,
+      badge: newDoctorCount > 0 ? (newDoctorCount > 99 ? "99+" : String(newDoctorCount)) : null,
       permission: PERMISSIONS.BOOKINGS_VIEW,
     },
     {
@@ -119,7 +124,7 @@ export default function Sidebar({ userType, locale }) {
       icon: Building2,
       color: "text-purple-500",
       bgColor: "bg-purple-50",
-      badge: null,
+      badge: newClinicCount > 0 ? (newClinicCount > 99 ? "99+" : String(newClinicCount)) : null,
       permission: PERMISSIONS.BOOKINGS_VIEW,
     },
     {
@@ -128,7 +133,7 @@ export default function Sidebar({ userType, locale }) {
       icon: Calendar,
       color: "text-blue-500",
       bgColor: "bg-blue-50",
-      badge: null,
+      badge: newHospitalCount > 0 ? (newHospitalCount > 99 ? "99+" : String(newHospitalCount)) : null,
       permission: PERMISSIONS.BOOKINGS_VIEW,
     },
     {
@@ -150,6 +155,15 @@ export default function Sidebar({ userType, locale }) {
       permission: PERMISSIONS.NOTIFICATIONS_VIEW,
     },
     {
+      name: t("statistics") || "Statistics",
+      href: `/${locale}/admin/statistics`,
+      icon: BarChart3,
+      color: "text-orange-500",
+      bgColor: "bg-orange-50",
+      badge: null,
+      permission: PERMISSIONS.BOOKINGS_VIEW,
+    },
+    {
       name: t("admins"),
       href: `/${locale}/admin/admins`,
       icon: UserCog,
@@ -158,7 +172,77 @@ export default function Sidebar({ userType, locale }) {
       badge: null,
       permission: PERMISSIONS.ADMINS_VIEW,
     },
-  ], [locale, t]);
+  ], [locale, t, newDoctorCount, newClinicCount, newHospitalCount]);
+
+  // Get provider type from auth store (Doctor / Clinic / Hospital)
+  const { user, providerType: storedProviderType } = useAuthStore();
+  const providerType = storedProviderType || user?.provider?.type || user?.type || "";
+  const isClinicOrHospital = providerType === "Clinic" || providerType === "Hospital";
+
+  // Provider navigation - unified for all provider types under /provider/ routes
+  // Only includes pages with real backend API endpoints
+  const providerNavigation = useMemo(() => {
+    const items = [
+      {
+        name: t("dashboard"),
+        href: `/${locale}/provider/dashboard`,
+        icon: LayoutDashboard,
+        color: "text-emerald-600",
+        bgColor: "bg-emerald-50",
+      },
+      {
+        name: t("appointments"),
+        href: `/${locale}/provider/bookings`,
+        icon: Calendar,
+        color: "text-purple-500",
+        bgColor: "bg-purple-50",
+      },
+    ];
+
+    // Only Clinic/Hospital can manage doctors
+    if (isClinicOrHospital) {
+      items.splice(1, 0, {
+        name: t("doctors"),
+        href: `/${locale}/provider/doctors`,
+        icon: Stethoscope,
+        color: "text-teal-500",
+        bgColor: "bg-teal-50",
+      });
+    }
+
+    items.push(
+      {
+        name: t("statistics"),
+        href: `/${locale}/provider/statistics`,
+        icon: BarChart3,
+        color: "text-orange-500",
+        bgColor: "bg-orange-50",
+      },
+      {
+        name: t("profile"),
+        href: `/${locale}/provider/profile`,
+        icon: UserCircle,
+        color: "text-blue-500",
+        bgColor: "bg-blue-50",
+      },
+      {
+        name: t("admins"),
+        href: `/${locale}/provider/team`,
+        icon: UserCog,
+        color: "text-slate-600",
+        bgColor: "bg-slate-100",
+      },
+      {
+        name: t("settings"),
+        href: `/${locale}/provider/settings`,
+        icon: Settings,
+        color: "text-slate-500",
+        bgColor: "bg-slate-50",
+      },
+    );
+
+    return items;
+  }, [locale, t, isClinicOrHospital, storedProviderType]);
 
   const hospitalNavigation = useMemo(() => [
     {
@@ -274,8 +358,8 @@ export default function Sidebar({ userType, locale }) {
 
     if (userType === "admin") {
       navItems = adminNavigation;
-    } else if (userType === "hospital") {
-      navItems = hospitalNavigation;
+    } else if (userType === "provider" || userType === "doctor" || userType === "hospital") {
+      navItems = providerNavigation;
     } else {
       navItems = doctorNavigation;
     }
@@ -291,17 +375,25 @@ export default function Sidebar({ userType, locale }) {
     }
 
     return navItems;
-  }, [userType, adminNavigation, hospitalNavigation, doctorNavigation, hasPermission]);
+  }, [userType, adminNavigation, providerNavigation, hospitalNavigation, doctorNavigation, hasPermission]);
 
   // Check if settings section should be shown
   const showSettingsSection = userType === "admin" && filteredSettingsSubNav.length > 0;
+
+  // Check if this is a provider panel
+  const isProviderPanel = userType === "provider" || userType === "doctor" || userType === "hospital";
 
   // Get user badge text
   const getUserBadgeText = () => {
     if (userType === "admin") {
       return isSuperAdmin ? "Super Admin" : "Admin";
     }
-    if (userType === "hospital") return "Hospital Panel";
+    if (isProviderPanel) {
+      if (providerType === "Doctor") return "Doctor Panel";
+      if (providerType === "Clinic") return "Clinic Panel";
+      if (providerType === "Hospital") return "Hospital Panel";
+      return "Provider Panel";
+    }
     return "Doctor Panel";
   };
 
@@ -315,7 +407,7 @@ export default function Sidebar({ userType, locale }) {
       {/* Logo */}
       <div className="flex h-16 items-center justify-center border-b border-border/50 px-6 bg-card/80 backdrop-blur-sm">
         <Link
-          href={`/${locale}/${userType}/${userType === 'admin' ? 'users' : 'dashboard'}`}
+          href={`/${locale}/${isProviderPanel ? 'provider' : userType}/${userType === 'admin' ? 'users' : 'dashboard'}`}
           className="flex items-center gap-3 group transition-all duration-300 hover:scale-105"
         >
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:rotate-3">
@@ -343,9 +435,20 @@ export default function Sidebar({ userType, locale }) {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
         {navigation.length === 0 && !showSettingsSection ? (
-          <div className="text-center py-8 text-muted-foreground text-sm">
-            {t("noAccess") || "No access to any modules"}
-          </div>
+          !isSuperAdmin && !permissionsLoaded ? (
+            <div className="space-y-2 px-2 py-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-xl">
+                  <div className="w-9 h-9 rounded-lg bg-muted animate-pulse" />
+                  <div className="flex-1 h-4 rounded bg-muted animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              {t("noAccess") || "No access to any modules"}
+            </div>
+          )
         ) : (
           <>
             {navigation.map((item, index) => {
@@ -402,11 +505,11 @@ export default function Sidebar({ userType, locale }) {
                   {/* Badge */}
                   {item.badge && (
                     <Badge
-                      variant={isActive ? "secondary" : "outline"}
+                      variant={isActive ? "secondary" : "destructive"}
                       className={cn(
                         "h-5 px-2 text-[10px] font-bold transition-all duration-300",
                         isActive && "bg-white/20 text-white border-white/30",
-                        !isActive && "bg-muted text-muted-foreground"
+                        !isActive && "bg-destructive text-white animate-pulse"
                       )}
                     >
                       {item.badge}

@@ -16,6 +16,7 @@ export default function middleware(request) {
   // Public routes (don't need authentication)
   const publicRoutes = [
     "/admin/login",
+    "/provider/login",
     "/hospital/login",
     "/doctor/login",
     "/forgot-password",
@@ -26,16 +27,14 @@ export default function middleware(request) {
 
   // Check if user is authenticated
   const token = request.cookies.get("access_token")?.value;
-  const userType = request.cookies.get("user_type")?.value; // admin, hospital, doctor
+  const userType = request.cookies.get("user_type")?.value; // admin, hospital, doctor, provider
 
   // If not authenticated and trying to access protected route
   if (!token && !isPublicRoute) {
     // Redirect to appropriate login based on path
     let loginPath = "/admin/login";
-    if (pathname.includes("/hospital/")) {
-      loginPath = "/hospital/login";
-    } else if (pathname.includes("/doctor/")) {
-      loginPath = "/doctor/login";
+    if (pathname.includes("/provider/") || pathname.includes("/hospital/") || pathname.includes("/doctor/")) {
+      loginPath = "/provider/login";
     }
 
     const loginUrl = new URL(`/${locale}${loginPath}`, request.url);
@@ -46,10 +45,10 @@ export default function middleware(request) {
   if (token && isPublicRoute) {
     let dashboardPath = "/admin/users";
 
-    if (userType === "hospital") {
-      dashboardPath = "/hospital/dashboard";
+    if (userType === "hospital" || userType === "provider") {
+      dashboardPath = "/provider/dashboard";
     } else if (userType === "doctor") {
-      dashboardPath = "/doctor/dashboard";
+      dashboardPath = "/provider/dashboard";
     }
 
     const dashboardUrl = new URL(`/${locale}${dashboardPath}`, request.url);

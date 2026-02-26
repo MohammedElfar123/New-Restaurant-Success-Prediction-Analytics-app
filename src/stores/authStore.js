@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AuthService from "@/lib/services/auth.service";
+import ProviderAuthService from "@/lib/services/provider-auth.service";
 import ProfileService from "@/lib/services/profile.service";
 
 const useAuthStore = create(
@@ -9,10 +10,12 @@ const useAuthStore = create(
       // State
       user: null,
       token: null,
-      userType: null, // 'admin', 'hospital', 'doctor'
+      userType: null, // 'admin', 'hospital', 'doctor', 'provider'
+      providerType: null, // 'Doctor', 'Clinic', 'Hospital' (original from API)
       isAuthenticated: false,
       isLoading: false,
       permissions: [],
+      permissionsLoaded: false,
 
       // Actions
       /**
@@ -25,8 +28,10 @@ const useAuthStore = create(
         try {
           const { email, password, userType } = credentials;
 
-          // Call the real API
-          const result = await AuthService.login({ email, password });
+          // Use the correct service based on userType
+          const isProvider = userType === "provider" || userType === "doctor" || userType === "hospital";
+          const authService = isProvider ? ProviderAuthService : AuthService;
+          const result = await authService.login({ email, password });
 
           if (!result.success) {
             set({ isLoading: false });
@@ -38,34 +43,83 @@ const useAuthStore = create(
 
           const { access_token, admin } = result.data;
 
+          // Determine the actual userType for providers
+          // Backend returns admin.type = "Provider" for all providers
+          // The provider's specific type (Doctor/Clinic/Hospital) is in admin.provider.type
+          let resolvedUserType = userType;
+          let resolvedProviderType = null;
+          if (isProvider) {
+            resolvedProviderType = admin?.provider?.type || admin?.type || null;
+            if (resolvedProviderType === "Doctor") resolvedUserType = "doctor";
+            else if (resolvedProviderType === "Clinic" || resolvedProviderType === "Hospital") resolvedUserType = "hospital";
+            else resolvedUserType = "provider"; // fallback
+          }
+
           // Save token to localStorage and cookies
           if (typeof window !== "undefined") {
             localStorage.setItem("access_token", access_token);
-            localStorage.setItem("user_type", userType);
+            localStorage.setItem("user_type", resolvedUserType);
 
             // Set cookies for middleware (expires in 30 days)
             document.cookie = `access_token=${access_token}; path=/; max-age=${30 * 24 * 60 * 60}`;
-            document.cookie = `user_type=${userType}; path=/; max-age=${30 * 24 * 60 * 60}`;
+            document.cookie = `user_type=${resolvedUserType}; path=/; max-age=${30 * 24 * 60 * 60}`;
           }
 
-          // Fetch permissions after login
-          const permissionsResult = await AuthService.getPermissions();
-          const permissions = permissionsResult.success ? permissionsResult.data : [];
-
-          // Update store
+          // Set auth state immediately so the UI can redirect without waiting for permissions
           set({
             user: admin,
             token: access_token,
-            userType: userType,
+            userType: resolvedUserType,
+            providerType: resolvedProviderType,
             isAuthenticated: true,
             isLoading: false,
-            permissions: permissions,
+            permissions: [],
+            permissionsLoaded: false,
           });
+
+          // Fetch permissions in the background using the correct service
+          const permService = isProvider ? ProviderAuthService : AuthService;
+          permService.getPermissions()
+            .then((permissionsResult) => {
+              if (permissionsResult.success) {
+                set({ permissions: permissionsResult.data, permissionsLoaded: true });
+              } else {
+                set({ permissionsLoaded: true });
+              }
+            })
+            .catch(() => {
+              set({ permissionsLoaded: true });
+            });
+
+          // For providers: fetch provider info to get accurate provider type
+          // The login response may not always include admin.provider.type
+          if (isProvider && (!resolvedProviderType || resolvedProviderType === "Provider")) {
+            import("@/lib/services/provider-info.service").then(({ default: ProviderInfoService }) => {
+              ProviderInfoService.getProviderInfo().then((infoResult) => {
+                if (infoResult.success && infoResult.data) {
+                  const fetchedType = infoResult.data.type;
+                  if (fetchedType && fetchedType !== "Provider") {
+                    let newUserType = "provider";
+                    if (fetchedType === "Doctor") newUserType = "doctor";
+                    else if (fetchedType === "Clinic" || fetchedType === "Hospital") newUserType = "hospital";
+
+                    set({ providerType: fetchedType, userType: newUserType });
+
+                    // Update cookies/localStorage
+                    if (typeof window !== "undefined") {
+                      localStorage.setItem("user_type", newUserType);
+                      document.cookie = `user_type=${newUserType}; path=/; max-age=${30 * 24 * 60 * 60}`;
+                    }
+                  }
+                }
+              }).catch(() => { /* silent */ });
+            }).catch(() => { /* silent */ });
+          }
 
           return {
             success: true,
             message: "تم تسجيل الدخول بنجاح",
-            userType: userType,
+            userType: resolvedUserType,
           };
 
         } catch (error) {
@@ -84,8 +138,11 @@ const useAuthStore = create(
         set({ isLoading: true });
 
         try {
-          // Call the real API
-          await AuthService.logout();
+          // Use the correct service based on current userType
+          const currentType = get().userType;
+          const isProvider = currentType === "provider" || currentType === "doctor" || currentType === "hospital";
+          const authService = isProvider ? ProviderAuthService : AuthService;
+          await authService.logout();
 
           // Clear token from localStorage and cookies
           if (typeof window !== "undefined") {
@@ -103,8 +160,10 @@ const useAuthStore = create(
             user: null,
             token: null,
             userType: null,
+            providerType: null,
             isAuthenticated: false,
             permissions: [],
+            permissionsLoaded: false,
             isLoading: false,
           });
 
@@ -152,12 +211,14 @@ const useAuthStore = create(
           const result = await AuthService.getPermissions();
 
           if (result.success) {
-            set({ permissions: result.data });
+            set({ permissions: result.data, permissionsLoaded: true });
             return { success: true, data: result.data };
           }
 
+          set({ permissionsLoaded: true });
           return { success: false, data: [] };
         } catch (error) {
+          set({ permissionsLoaded: true });
           return { success: false, data: [] };
         }
       },
@@ -266,6 +327,15 @@ const useAuthStore = create(
       },
 
       /**
+       * Check if user is any provider type (doctor, hospital, clinic)
+       * @returns {boolean}
+       */
+      isProvider: () => {
+        const type = get().userType;
+        return type === 'provider' || type === 'doctor' || type === 'hospital';
+      },
+
+      /**
        * Initialize auth from localStorage (for page refresh)
        */
       initialize: () => {
@@ -300,6 +370,7 @@ const useAuthStore = create(
       partialize: (state) => ({
         user: state.user,
         userType: state.userType,
+        providerType: state.providerType,
         isAuthenticated: state.isAuthenticated,
         permissions: state.permissions,
       }),

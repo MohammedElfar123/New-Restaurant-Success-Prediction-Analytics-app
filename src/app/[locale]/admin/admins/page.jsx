@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, useParams } from "next/navigation";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -55,7 +55,7 @@ export default function AdminsPage() {
   const [adminToRestore, setAdminToRestore] = useState(null);
 
   // Fetch admins from API
-  const fetchAdmins = async (search = "") => {
+  const fetchAdmins = useCallback(async (search = searchQuery) => {
     setIsLoading(true);
     try {
       const [adminsResult, deletedResult] = await Promise.all([
@@ -114,20 +114,24 @@ export default function AdminsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [searchQuery, t]);
 
   // Initial fetch
   useEffect(() => {
     fetchAdmins();
-  }, []);
+  }, [fetchAdmins]);
 
   // Search with debounce
+  const searchTimerRef = useRef(null);
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchAdmins(searchQuery);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      // searchQuery change will trigger fetchAdmins via useCallback deps
     }, 500);
 
-    return () => clearTimeout(timer);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
   }, [searchQuery]);
 
   // Handle view details

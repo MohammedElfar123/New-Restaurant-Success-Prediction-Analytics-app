@@ -21,6 +21,7 @@ import {
   Building2,
   Eye,
   EyeOff,
+  Heart,
 } from "lucide-react";
 
 export default function AdminLoginPage() {
@@ -170,9 +171,31 @@ export default function AdminLoginPage() {
             </Button>
           </form>
 
+          {/* Switch to Provider */}
+          <div className="mt-8">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border/60"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-3 text-muted-foreground/60">
+                  {isRTL ? "أو سجل الدخول كـ" : "OR LOGIN AS"}
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => router.push("/provider/login")}
+              className="mt-4 w-full flex items-center justify-center gap-2 h-11 rounded-xl border border-border/60 bg-muted/30 hover:bg-emerald-50 text-sm font-medium text-muted-foreground hover:text-emerald-700 transition-colors group"
+            >
+              <Heart className="w-4 h-4 group-hover:text-emerald-600 transition-colors" />
+              {isRTL ? "طبيب / عيادة / مستشفى" : "Doctor / Clinic / Hospital"}
+            </button>
+          </div>
+
           {/* Footer */}
           <p className="text-center text-muted-foreground/60 text-xs mt-10">
-            &copy; {new Date().getFullYear()} Mawadk.{" " /* v2 */}
+            &copy; {new Date().getFullYear()} Mawadk.{" "}
             {isRTL ? "جميع الحقوق محفوظة" : "All rights reserved"}
           </p>
         </div>

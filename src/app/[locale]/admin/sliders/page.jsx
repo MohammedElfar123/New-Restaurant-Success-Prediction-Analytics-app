@@ -48,14 +48,14 @@ export default function SlidersPage() {
   const [selectedSlider, setSelectedSlider] = useState(null);
 
   // Fetch sliders
-  const fetchSliders = useCallback(async (page = 1, search = "") => {
+  const fetchSliders = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = {
-        page,
+        page: currentPage,
         per_page: itemsPerPage,
       };
-      if (search) params.search = search;
+      if (searchQuery) params.search = searchQuery;
 
       const result = await SlidersService.getSliders(params);
 
@@ -70,20 +70,26 @@ export default function SlidersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [tc]);
+  }, [currentPage, searchQuery, tc, itemsPerPage]);
 
-  // Initial fetch
+  // Fetch on page/search change
   useEffect(() => {
-    fetchSliders(currentPage, searchQuery);
-  }, [currentPage]);
+    fetchSliders();
+  }, [fetchSliders]);
 
-  // Search with debounce
+  // Search debounce — reset to page 1
+  const searchTimerRef = useRef(null);
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setCurrentPage(1);
-      fetchSliders(1, searchQuery);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      }
     }, 500);
-    return () => clearTimeout(timer);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   // Close dropdown when clicking outside

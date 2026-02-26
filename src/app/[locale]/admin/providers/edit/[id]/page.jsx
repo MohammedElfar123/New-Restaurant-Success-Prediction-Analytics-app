@@ -356,10 +356,8 @@ export default function EditProviderPage() {
       submitData.append("owner[name]", formData.owner_name);
       submitData.append("owner[email]", formData.owner_email);
       submitData.append("owner[phone]", formData.owner_phone);
-      // Only send password if provided
-      if (formData.owner_password) {
-        submitData.append("owner[password]", formData.owner_password);
-      }
+      // Backend requires password even on update - send provided or default
+      submitData.append("owner[password]", formData.owner_password || "12345678");
 
       // Categories
       selectedCategories.forEach(catId => {

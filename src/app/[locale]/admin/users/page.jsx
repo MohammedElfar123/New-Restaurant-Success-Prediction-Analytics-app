@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +50,7 @@ export default function UsersPage() {
   const [customerToRestore, setCustomerToRestore] = useState(null);
 
   // Fetch customers from API
-  const fetchCustomers = async (page = 1, search = "") => {
+  const fetchCustomers = useCallback(async (page = currentPage, search = searchQuery) => {
     setIsLoading(true);
     try {
       const [activeResult, deletedResult] = await Promise.all([
@@ -84,22 +84,26 @@ export default function UsersPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, deletedPage, searchQuery, itemsPerPage]);
 
-  // Initial fetch
+  // Initial fetch and on page change
   useEffect(() => {
-    fetchCustomers(currentPage, searchQuery);
-  }, [currentPage, deletedPage]);
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   // Search with debounce
+  const searchTimerRef = useRef(null);
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
       setCurrentPage(1);
       setDeletedPage(1);
-      fetchCustomers(1, searchQuery);
     }, 500);
 
-    return () => clearTimeout(timer);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   // Handle status toggle

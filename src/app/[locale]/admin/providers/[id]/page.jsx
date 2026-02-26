@@ -125,14 +125,33 @@ export default function ViewProviderPage() {
     setIsFormModalOpen(true);
   };
 
-  const handleEditDoctor = (doctor) => {
-    setSelectedDoctor(doctor);
+  const handleEditDoctor = async (doctor) => {
+    // Fetch full details (includes translations + schedules) before opening edit modal
+    try {
+      const result = await ProviderDoctorsService.getProviderDoctorById(doctor.id);
+      if (result.success && result.data) {
+        setSelectedDoctor(result.data);
+      } else {
+        setSelectedDoctor(doctor);
+      }
+    } catch {
+      setSelectedDoctor(doctor);
+    }
     setIsFormModalOpen(true);
   };
 
-  const handleViewDoctor = (doctor) => {
-    setSelectedDoctor(doctor);
+  const handleViewDoctor = async (doctor) => {
+    // Fetch full details (includes translations + schedules) before opening view modal
     setIsViewModalOpen(true);
+    setSelectedDoctor(doctor); // Show immediately with basic data
+    try {
+      const result = await ProviderDoctorsService.getProviderDoctorById(doctor.id);
+      if (result.success && result.data) {
+        setSelectedDoctor(result.data);
+      }
+    } catch {
+      // Keep the basic doctor data if fetch fails
+    }
   };
 
   const handleDoctorFormSuccess = () => {

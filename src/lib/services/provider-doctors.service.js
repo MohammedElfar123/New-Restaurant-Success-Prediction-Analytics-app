@@ -1,10 +1,22 @@
+import providerClient from "../api/providerClient";
 import apiClient from "../api/client";
 
 /**
  * Provider Doctors Service - Handles doctors inside Hospitals/Clinics
  * These are different from standalone Doctor providers
- * Base URL: /dashboard (already in API_BASE_URL)
+ *
+ * Auto-detects which API client to use:
+ * - Admin dashboard (/admin/) -> apiClient (/api/v1/dashboard)
+ * - Provider panel (/provider/) -> providerClient (/api/v1/provider-panel)
+ *
+ * Both backends expose the same /provider-doctors endpoints.
  */
+function getClient() {
+  if (typeof window !== "undefined" && window.location.pathname.includes("/admin/")) {
+    return apiClient;
+  }
+  return providerClient;
+}
 const ProviderDoctorsService = {
   /**
    * List Provider Doctors with filtering and pagination
@@ -21,7 +33,7 @@ const ProviderDoctorsService = {
    */
   getProviderDoctors: async (params = {}) => {
     try {
-      const response = await apiClient.get("/provider-doctors", { params });
+      const response = await getClient().get("/provider-doctors", { params });
 
       if (response.data?.status === "success") {
         return {
@@ -60,7 +72,7 @@ const ProviderDoctorsService = {
    */
   getProviderDoctorById: async (id) => {
     try {
-      const response = await apiClient.get(`/provider-doctors/${id}`);
+      const response = await getClient().get(`/provider-doctors/${id}`);
 
       if (response.data?.status === "success") {
         return {
@@ -93,11 +105,7 @@ const ProviderDoctorsService = {
    */
   createProviderDoctor: async (formData) => {
     try {
-      const response = await apiClient.post("/provider-doctors", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await getClient().post("/provider-doctors", formData);
 
       if (response.data?.status === "success") {
         return {
@@ -131,11 +139,7 @@ const ProviderDoctorsService = {
    */
   updateProviderDoctor: async (id, formData) => {
     try {
-      const response = await apiClient.post(`/provider-doctors/${id}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const response = await getClient().post(`/provider-doctors/${id}`, formData);
 
       if (response.data?.status === "success") {
         return {
@@ -168,7 +172,7 @@ const ProviderDoctorsService = {
    */
   toggleDoctorStatus: async (id) => {
     try {
-      const response = await apiClient.post(`/provider-doctors/update-status/${id}`);
+      const response = await getClient().post(`/provider-doctors/update-status/${id}`);
 
       if (response.data?.status === "success") {
         return {
@@ -217,7 +221,7 @@ const ProviderDoctorsService = {
     if (data.en_name) formData.append("en[name]", data.en_name);
     if (data.en_short_description) formData.append("en[short_description]", data.en_short_description);
 
-    // Working schedules (7 days)
+    // Working schedules (always send all 7 days - backend requires exactly 7)
     if (data.schedules && Array.isArray(data.schedules)) {
       data.schedules.forEach((schedule, index) => {
         formData.append(`schedules[${index}][day_of_week]`, schedule.day_of_week);
@@ -243,6 +247,7 @@ const ProviderDoctorsService = {
       day_of_week: i,
       open_time: "08:00",
       close_time: "17:00",
+      is_working: true,
     }));
   },
 
@@ -262,43 +267,33 @@ const ProviderDoctorsService = {
 
   /**
    * Get Categories Dropdown for Provider Doctors
-   * GET /categories or /dropdown/categories
+   * GET /all-categories (provider-panel endpoint)
    * @returns {Promise} - Array of categories for select
    */
   getCategoriesDropdown: async () => {
     try {
-      // Try multiple possible endpoints
-      const endpoints = [
-        "/categories",
-        "/drop-down-list/categories",
-        "/dropdown/categories",
-      ];
+      const client = getClient();
+      const isAdmin = typeof window !== "undefined" && window.location.pathname.includes("/admin/");
+      // Admin dashboard uses /categories (paginated), provider panel uses /all-categories
+      const url = isAdmin ? "/categories" : "/all-categories";
+      const params = isAdmin ? { per_page: 100 } : {};
 
-      for (const endpoint of endpoints) {
-        try {
-          const response = await apiClient.get(endpoint);
-          if (response.data?.status === "success" && response.data.data) {
-            // Handle both array and object with items
-            const data = Array.isArray(response.data.data)
-              ? response.data.data
-              : response.data.data.items || [];
-            return {
-              success: true,
-              data: data,
-              message: response.data.message,
-            };
-          }
-        } catch (e) {
-          // Try next endpoint
-          continue;
-        }
+      const response = await client.get(url, { params });
+
+      if (response.data?.status === "success" && response.data.data) {
+        const raw = response.data.data;
+        const data = Array.isArray(raw) ? raw : raw.items || [];
+        return {
+          success: true,
+          data: data,
+          message: response.data.message,
+        };
       }
 
-      // If no endpoint works, return empty with success to avoid crashes
       return {
         success: true,
         data: [],
-        message: "Categories endpoint not available",
+        message: "No categories found",
       };
     } catch (error) {
       console.error("[ProviderDoctorsService] Get categories dropdown error:", error);
@@ -306,6 +301,33 @@ const ProviderDoctorsService = {
         success: true,
         data: [],
         message: error.response?.data?.message || "Error fetching categories",
+      };
+    }
+  },
+
+  /**
+   * Export Doctors to Excel
+   * GET /provider-doctors/export
+   * @returns {Promise} - { url: "download_url" }
+   */
+  exportDoctors: async () => {
+    try {
+      const response = await getClient().get("/provider-doctors/export");
+
+      if (response.data?.status === "success") {
+        return {
+          success: true,
+          data: response.data.data,
+          message: response.data.message || "Export generated successfully",
+        };
+      }
+
+      return { success: false, message: response.data?.message || "Export failed" };
+    } catch (error) {
+      console.error("[ProviderDoctorsService] Export error:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Export error",
       };
     }
   },
