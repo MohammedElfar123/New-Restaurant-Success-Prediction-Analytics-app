@@ -132,10 +132,10 @@ export default function ProviderDoctorViewModal({
             <div className="bg-slate-50 rounded-xl p-4 text-center">
               <div className="flex items-center justify-center gap-1.5 text-slate-500 mb-2">
                 <TrendingUp className="h-4 w-4" />
-                <span className="text-xs">{t("revenue")}</span>
+                <span className="text-xs">{locale === "ar" ? "الإيراد المكتسب" : "Earned Revenue"}</span>
               </div>
               <div className="text-xl font-bold text-primary">
-                {parseFloat(doctor.bookings_sum_total || 0).toLocaleString()}
+                {parseFloat(doctor.bookings_completed_sum || doctor.bookings_sum_total || 0).toLocaleString()}
               </div>
             </div>
             <div className="bg-slate-50 rounded-xl p-4 text-center">

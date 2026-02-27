@@ -12,7 +12,13 @@ class NotificationSoundManager {
   }
 
   initialize() {
-    if (this.isInitialized) return;
+    if (this.isInitialized) {
+      // Already initialized - resume if suspended (works when called from user gesture)
+      if (this.audioContext?.state === "suspended") {
+        this.audioContext.resume();
+      }
+      return;
+    }
     try {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
       this.isInitialized = true;
@@ -88,12 +94,15 @@ const useNotificationStore = create(
       todayBookings: 0,
       activeNow: 0,
       lastKnownBookingIds: null,    // Set of booking IDs from last poll (as array for storage)
+      lastKnownTotalBookings: null, // Total bookings count from reports (for provider detection)
+      providerLastPage: null,       // Last page number for provider API (to fetch newest bookings)
       lastPollTimestamp: null,
       isPolling: false,
       soundEnabled: true,
       pollIntervalId: null,
       hasNewNotification: false,
       latestBookings: [],           // Latest bookings for dropdown
+      currentUserType: null,        // "admin" or "provider"/"doctor"/"hospital"
 
       // --- Actions ---
 
@@ -107,9 +116,9 @@ const useNotificationStore = create(
 
       /**
        * Main polling function
-       * Detects new bookings by comparing booking IDs between polls.
-       * New IDs that weren't in the previous poll = new bookings.
-       * We check each new booking's provider.type to categorize them.
+       * Admin: Detects new bookings by comparing booking IDs (sortBy=latest ensures newest on page 1)
+       * Provider: Detects new bookings by comparing reports.total_bookings count
+       *   (provider API sorts by appointment date, so new bookings don't appear on page 1)
        */
       pollForNewBookings: async () => {
         const state = get();
@@ -118,7 +127,10 @@ const useNotificationStore = create(
         set({ isPolling: true });
 
         try {
-          const result = await NotificationsService.getBookingStats();
+          const isProvider = state.currentUserType && state.currentUserType !== "admin";
+          const result = isProvider
+            ? await NotificationsService.getProviderBookingStats(state.providerLastPage)
+            : await NotificationsService.getBookingStats();
 
           if (result.success) {
             const stats = result.stats;
@@ -126,66 +138,95 @@ const useNotificationStore = create(
 
             const todayCount = stats?.today_bookings?.value || 0;
             const activeCount = stats?.today_bookings?.active_now || 0;
-
-            // Sort bookings by created_at descending (newest first)
-            const sortedBookings = [...latestBookings].sort((a, b) => {
-              const dateA = new Date(a.created_at || 0);
-              const dateB = new Date(b.created_at || 0);
-              return dateB - dateA;
-            });
-
-            // Get current booking IDs
-            const currentIds = new Set(sortedBookings.map((b) => b.id).filter(Boolean));
-            const prevIds = state.lastKnownBookingIds
-              ? new Set(state.lastKnownBookingIds)
-              : null;
+            const totalBookings = stats?.total_bookings || 0;
 
             let newDoctor = 0;
             let newClinic = 0;
             let newHospital = 0;
             let hasNew = false;
+            let totalNewCount = 0;
 
-            // Detect new bookings by comparing IDs
-            if (prevIds !== null && currentIds.size > 0) {
-              // Find IDs that are in current but not in previous
-              const newBookings = sortedBookings.filter(
-                (b) => b.id && !prevIds.has(b.id)
-              );
-
-              if (newBookings.length > 0) {
+            if (isProvider) {
+              // ===== PROVIDER: Total count-based detection =====
+              // Provider API sorts by appointment date (oldest first),
+              // so new bookings don't appear on page 1. Instead, we
+              // compare the total_bookings count from reports.
+              if (state.lastKnownTotalBookings !== null && totalBookings > state.lastKnownTotalBookings) {
+                totalNewCount = totalBookings - state.lastKnownTotalBookings;
                 hasNew = true;
 
-                for (const booking of newBookings) {
-                  const providerType = booking.provider?.type;
-                  if (providerType === "Doctor") newDoctor++;
-                  else if (providerType === "Clinic") newClinic++;
-                  else if (providerType === "Hospital") newHospital++;
-                }
-
                 console.log(
-                  `[NotificationStore] ${newBookings.length} new booking(s) detected:`,
-                  {
-                    doctor: newDoctor,
-                    clinic: newClinic,
-                    hospital: newHospital,
-                    newIds: newBookings.map((b) => b.id),
-                  }
+                  `[NotificationStore] Provider: ${totalNewCount} new booking(s) detected`,
+                  { previous: state.lastKnownTotalBookings, current: totalBookings }
                 );
 
-                // Play sound
                 if (state.soundEnabled) {
                   soundManager.play();
                 }
               }
-            }
 
-            const totalNewCount = newDoctor + newClinic + newHospital;
+              // Store lastPage for next poll + recalculate if total changed
+              const newLastPage = result.lastPage || state.providerLastPage || 1;
+              // If new bookings were added, the last page might have changed
+              const recalcLastPage = hasNew ? Math.ceil(totalBookings / 10) : newLastPage;
+              set({ providerLastPage: recalcLastPage });
+            } else {
+              // ===== ADMIN: ID-based detection =====
+              // Admin API supports sortBy=latest, so newest bookings are on page 1.
+              const sortedBookings = [...latestBookings].sort((a, b) => {
+                const dateA = new Date(a.created_at || 0);
+                const dateB = new Date(b.created_at || 0);
+                return dateB - dateA;
+              });
+
+              const currentIds = new Set(sortedBookings.map((b) => b.id).filter(Boolean));
+              const prevIds = state.lastKnownBookingIds
+                ? new Set(state.lastKnownBookingIds)
+                : null;
+
+              if (prevIds !== null && currentIds.size > 0) {
+                const newBookings = sortedBookings.filter(
+                  (b) => b.id && !prevIds.has(b.id)
+                );
+
+                if (newBookings.length > 0) {
+                  hasNew = true;
+
+                  for (const booking of newBookings) {
+                    const providerType = booking.provider?.type;
+                    if (providerType === "Doctor") newDoctor++;
+                    else if (providerType === "Clinic") newClinic++;
+                    else if (providerType === "Hospital") newHospital++;
+                  }
+
+                  totalNewCount = newDoctor + newClinic + newHospital;
+                  if (totalNewCount === 0) totalNewCount = newBookings.length;
+
+                  console.log(
+                    `[NotificationStore] Admin: ${newBookings.length} new booking(s) detected:`,
+                    {
+                      doctor: newDoctor,
+                      clinic: newClinic,
+                      hospital: newHospital,
+                      newIds: newBookings.map((b) => b.id),
+                    }
+                  );
+
+                  if (state.soundEnabled) {
+                    soundManager.play();
+                  }
+                }
+              }
+
+              // Update admin ID tracking
+              set({ lastKnownBookingIds: [...currentIds] });
+            }
 
             set({
               todayBookings: todayCount,
               activeNow: activeCount,
-              latestBookings: sortedBookings.slice(0, 5), // Keep only 5 newest for dropdown
-              lastKnownBookingIds: [...currentIds],       // Store as array
+              latestBookings: latestBookings.slice(0, 5),
+              lastKnownTotalBookings: totalBookings,
               lastPollTimestamp: Date.now(),
               isPolling: false,
               ...(hasNew
@@ -215,21 +256,34 @@ const useNotificationStore = create(
       },
 
       /**
-       * Start polling (every 30 seconds)
+       * Start polling (every 10 seconds)
+       * @param {string} userType - "admin" | "provider" | "doctor" | "hospital"
        */
-      startPolling: () => {
+      startPolling: (userType) => {
         const state = get();
-        if (state.pollIntervalId) return;
+
+        // If already polling with the SAME user type, skip
+        if (state.pollIntervalId && state.currentUserType === userType) return;
+
+        // If polling with a DIFFERENT user type, stop and restart
+        if (state.pollIntervalId) {
+          clearInterval(state.pollIntervalId);
+          console.log(`[NotificationStore] Restarting polling: ${state.currentUserType} → ${userType}`);
+        }
 
         soundManager.initialize();
 
         // Reset baseline on fresh session
         set({
           lastKnownBookingIds: null,
+          lastKnownTotalBookings: null,
+          providerLastPage: null,
           newBookingsCount: 0,
           newDoctorCount: 0,
           newClinicCount: 0,
           newHospitalCount: 0,
+          currentUserType: userType || null,
+          pollIntervalId: null,
         });
 
         // Initial poll (establishes baseline IDs - no notification on first poll)
@@ -237,10 +291,10 @@ const useNotificationStore = create(
 
         const intervalId = setInterval(() => {
           get().pollForNewBookings();
-        }, 30000);
+        }, 10000);
 
         set({ pollIntervalId: intervalId });
-        console.log("[NotificationStore] Polling started (every 30s)");
+        console.log(`[NotificationStore] Polling started (every 10s) for ${userType || "unknown"}`);
       },
 
       stopPolling: () => {
@@ -280,11 +334,14 @@ const useNotificationStore = create(
           todayBookings: 0,
           activeNow: 0,
           lastKnownBookingIds: null,
+          lastKnownTotalBookings: null,
+          providerLastPage: null,
           lastPollTimestamp: null,
           isPolling: false,
           pollIntervalId: null,
           hasNewNotification: false,
           latestBookings: [],
+          currentUserType: null,
         });
       },
     }),

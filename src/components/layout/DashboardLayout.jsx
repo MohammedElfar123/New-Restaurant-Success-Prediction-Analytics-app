@@ -43,7 +43,7 @@ export default function DashboardLayout({ children, requiredUserType }) {
   // Start notification polling when authenticated, reset on logout
   useEffect(() => {
     if (isClient && isAuthenticated) {
-      startPolling();
+      startPolling(userType);
     } else if (isClient && !isAuthenticated) {
       resetNotifications();
     }
@@ -51,7 +51,7 @@ export default function DashboardLayout({ children, requiredUserType }) {
       stopPolling();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isClient, isAuthenticated]);
+  }, [isClient, isAuthenticated, userType]);
 
   // Show loading or nothing while checking auth on client
   if (!isClient) {

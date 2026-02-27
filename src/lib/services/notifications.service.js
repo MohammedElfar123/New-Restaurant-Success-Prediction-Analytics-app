@@ -1,4 +1,5 @@
 import apiClient from "../api/client";
+import providerClient from "../api/providerClient";
 
 /**
  * Notifications Service - Handles all notification-related API calls
@@ -64,6 +65,7 @@ const NotificationsService = {
       // Fetch latest 10 bookings sorted newest first (backend supports sortBy=latest)
       const response = await apiClient.get("/bookings", {
         params: { per_page: 10, page: 1, sortBy: "latest" },
+        _silent: true, // Suppress toast errors for polling requests
       });
 
       if (response.data?.status === "success") {
@@ -98,6 +100,101 @@ const NotificationsService = {
         stats: null,
         latestBookings: [],
         message: error.response?.data?.message || "Error fetching booking stats",
+      };
+    }
+  },
+
+  /**
+   * Get Provider Bookings with Reports (for polling new bookings in provider panel)
+   * GET /bookings via providerClient
+   *
+   * IMPORTANT: The backend returns different `reports` data per page:
+   *   - Page 1: reports.total_bookings = correct count, today_bookings = correct
+   *   - Other pages: reports.total_bookings = 0, today_bookings = 0
+   * So we ALWAYS fetch page 1 for stats, and optionally fetch the last page
+   * for display bookings (provider API sorts by appointment date ascending).
+   *
+   * @param {number|null} lastPage - Last page number from previous poll (null = first poll)
+   * @returns {Promise} - { success, stats, latestBookings, lastPage, message }
+   */
+  getProviderBookingStats: async (lastPage = null) => {
+    try {
+      // Always fetch page 1 for accurate stats (reports data is only correct on page 1)
+      const statsRequest = providerClient.get("/bookings", {
+        params: { per_page: 10, page: 1 },
+        _silent: true,
+      });
+
+      // If we know the last page and it's > 1, also fetch it for newest bookings
+      const displayRequest = lastPage && lastPage > 1
+        ? providerClient.get("/bookings", {
+            params: { per_page: 10, page: lastPage },
+            _silent: true,
+          })
+        : null;
+
+      const [statsResponse, displayResponse] = await Promise.all([
+        statsRequest,
+        displayRequest || Promise.resolve(null),
+      ]);
+
+      if (statsResponse.data?.status === "success") {
+        const statsData = statsResponse.data.data;
+        const reports = statsData?.reports || null;
+        const statsMeta = statsData?.meta || {};
+
+        // Combine bookings from page 1 + last page, deduplicate by ID
+        // This gives us the broadest set to find the most recently created bookings
+        const page1Items = statsData?.items || [];
+        const lastPageItems = displayResponse?.data?.status === "success"
+          ? (displayResponse.data.data?.items || [])
+          : [];
+
+        const seenIds = new Set();
+        const allItems = [];
+        for (const item of [...page1Items, ...lastPageItems]) {
+          if (item.id && !seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            allItems.push(item);
+          }
+        }
+
+        // Sort by ID descending (highest ID = most recently created)
+        const displayItems = allItems.sort((a, b) => (b.id || 0) - (a.id || 0));
+
+        console.log("[NotificationsService] Provider poll data:", {
+          statsPage: 1,
+          displayPage: lastPage || 1,
+          lastPage: statsMeta.last_page,
+          displayItemsCount: displayItems.length,
+          totalBookings: reports?.total_bookings,
+          todayBookings: reports?.today_bookings?.value,
+        });
+
+        return {
+          success: true,
+          stats: reports,
+          latestBookings: displayItems,
+          lastPage: statsMeta.last_page || 1,
+          message: statsResponse.data.message,
+        };
+      }
+
+      return {
+        success: false,
+        stats: null,
+        latestBookings: [],
+        lastPage: null,
+        message: statsResponse.data?.message || "Failed to fetch provider booking stats",
+      };
+    } catch (error) {
+      console.error("[NotificationsService] Get provider booking stats error:", error);
+      return {
+        success: false,
+        stats: null,
+        latestBookings: [],
+        lastPage: null,
+        message: error.response?.data?.message || "Error fetching provider booking stats",
       };
     }
   },

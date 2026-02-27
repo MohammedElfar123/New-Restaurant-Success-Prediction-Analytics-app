@@ -43,7 +43,8 @@
     "refresh": "Refresh",
     "to": "to",
     "of": "of",
-    "showing": "Showing"
+    "showing": "Showing",
+    "required": "This field is required"
   },
   "auth": {
     "login": "Login",
@@ -85,7 +86,9 @@
     "patients": "Patients",
     "earnings": "Earnings",
     "sliders": "Sliders",
-    "cities": "Cities & Select"
+    "cities": "Cities & Select",
+    "statistics": "Statistics",
+    "noAccess": "No access to any modules"
   },
   "dashboard": {
     "dashboard": "Dashboard",
@@ -98,7 +101,8 @@
     "totalAppointments": "Total Appointments",
     "pendingApprovals": "Pending Approvals",
     "revenue": "Revenue",
-    "rating": "Rating"
+    "rating": "Rating",
+    "earnings": "Earnings"
   },
   "toast": {
     "success": {
@@ -195,7 +199,9 @@
     "page": "Page",
     "slider": "slider",
     "deactivate": "Deactivate",
-    "activate": "Activate"
+    "activate": "Activate",
+    "clickToUpload": "Click to upload",
+    "removeImage": "Remove"
   },
   "cities": {
     "title": "Cities & Areas Management",
@@ -260,7 +266,10 @@
       "completed": "Completed",
       "patientInfo": "Patient Info",
       "appointmentDetails": "Appointment Details",
-      "noAppointments": "No appointments found"
+      "noAppointments": "No appointments found",
+      "type": "Type",
+      "dateAndTime": "Date & Time",
+      "fee": "Fee"
     },
     "patients": {
       "title": "Patients",
@@ -268,6 +277,8 @@
       "totalPatients": "Total Patients",
       "activePatients": "Active Patients",
       "newThisMonth": "New This Month",
+      "newPatients": "New Patients",
+      "returningPatients": "Returning Patients",
       "patientInfo": "Patient Info",
       "lastVisit": "Last Visit",
       "totalVisits": "Total Visits",
@@ -280,9 +291,13 @@
       "avgRating": "Average Rating",
       "positive": "Positive",
       "needsAttention": "Needs Attention",
+      "needsResponse": "Needs Response",
       "patientAndRating": "Patient & Rating",
+      "patientName": "Patient Name",
+      "rating": "Rating",
       "comment": "Comment",
       "date": "Date",
+      "reply": "Reply",
       "noReviews": "No reviews found"
     },
     "schedule": {

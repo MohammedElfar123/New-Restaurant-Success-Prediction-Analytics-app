@@ -17,6 +17,7 @@ import {
   Calendar,
   DollarSign,
   CheckCircle,
+  CheckCircle2,
   XCircle,
   Loader2,
   AlertCircle,
@@ -279,11 +280,9 @@ export default function ProviderDoctorDetailsPage() {
                 <TrendingUp className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-xs text-slate-500">{isRTL ? "الإيرادات" : "Revenue"}</p>
+                <p className="text-xs text-slate-500">{isRTL ? "الإيراد المكتسب" : "Earned Revenue"}</p>
                 <p className="text-xl font-bold text-slate-900">
-                  {doctor.bookings_sum_total && doctor.bookings_sum_total !== 0
-                    ? `${parseFloat(doctor.bookings_sum_total).toLocaleString()} QAR`
-                    : "0 QAR"}
+                  {parseFloat(doctor.bookings_completed_sum || doctor.bookings_sum_total || 0).toLocaleString()} QAR
                 </p>
               </div>
             </div>
@@ -330,6 +329,52 @@ export default function ProviderDoctorDetailsPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Revenue Breakdown */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {/* Earned Revenue */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border-s-4 border-s-emerald-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">{isRTL ? "إيراد مكتسب" : "Earned Revenue"}</p>
+              <p className="text-lg font-bold text-emerald-600">
+                {parseFloat(doctor.bookings_completed_sum || 0).toLocaleString()} QAR
+              </p>
+            </div>
+          </div>
+        </div>
+        {/* Pending Revenue */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border-s-4 border-s-amber-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">{isRTL ? "إيراد معلق" : "Pending Revenue"}</p>
+              <p className="text-lg font-bold text-amber-600">
+                {parseFloat(doctor.bookings_pending_sum || 0).toLocaleString()} QAR
+              </p>
+            </div>
+          </div>
+        </div>
+        {/* Lost Revenue */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border-s-4 border-s-rose-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center">
+              <XCircle className="w-5 h-5 text-rose-600" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">{isRTL ? "إيراد ضائع" : "Lost Revenue"}</p>
+              <p className="text-lg font-bold text-rose-600">
+                {parseFloat(doctor.bookings_cancelled_sum || 0).toLocaleString()} QAR
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Main Content Grid */}

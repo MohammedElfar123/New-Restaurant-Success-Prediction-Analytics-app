@@ -43,7 +43,8 @@
     "refresh": "تحديث",
     "to": "إلى",
     "of": "من",
-    "showing": "عرض"
+    "showing": "عرض",
+    "required": "هذا الحقل مطلوب"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -85,7 +86,9 @@
     "patients": "المرضى",
     "earnings": "الأرباح",
     "sliders": "السلايدرز",
-    "cities": "المدن والقوائم"
+    "cities": "المدن والقوائم",
+    "statistics": "الإحصائيات",
+    "noAccess": "لا يوجد صلاحية للوصول لأي قسم"
   },
   "dashboard": {
     "dashboard": "لوحة التحكم",
@@ -98,7 +101,8 @@
     "totalAppointments": "إجمالي المواعيد",
     "pendingApprovals": "الموافقات المعلقة",
     "revenue": "الإيرادات",
-    "rating": "التقييم"
+    "rating": "التقييم",
+    "earnings": "الأرباح"
   },
   "toast": {
     "success": {
@@ -195,7 +199,9 @@
     "page": "صفحة",
     "slider": "سلايدر",
     "deactivate": "تعطيل",
-    "activate": "تفعيل"
+    "activate": "تفعيل",
+    "clickToUpload": "اضغط للرفع",
+    "removeImage": "إزالة"
   },
   "users": {
     "title": "إدارة المستخدمين",
@@ -367,7 +373,10 @@
       "completed": "مكتملة",
       "patientInfo": "معلومات المريض",
       "appointmentDetails": "تفاصيل الموعد",
-      "noAppointments": "لا توجد مواعيد"
+      "noAppointments": "لا توجد مواعيد",
+      "type": "النوع",
+      "dateAndTime": "التاريخ والوقت",
+      "fee": "الرسوم"
     },
     "patients": {
       "title": "المرضى",

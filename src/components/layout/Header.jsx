@@ -27,6 +27,7 @@ import {
 import { useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import BookingsService from "@/lib/services/bookings.service";
+import ProviderBookingsService from "@/lib/services/provider-bookings.service";
 
 // Provider type config for icons and colors
 const PROVIDER_TYPE_CONFIG = {
@@ -74,6 +75,7 @@ export default function Header() {
   const params = useParams();
   const currentLocale = params.locale;
   const isAr = currentLocale === "ar";
+  const isProvider = userType === "provider" || userType === "doctor" || userType === "hospital";
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [currentTime, setCurrentTime] = useState("");
@@ -125,13 +127,17 @@ export default function Header() {
   }, [showNotifications, newBookingsCount, markAsSeen, initializeSound]);
 
   const navigateToBooking = useCallback(
-    (providerType) => {
+    (bookingId, providerType) => {
       setShowNotifications(false);
-      const config = PROVIDER_TYPE_CONFIG[providerType];
-      const route = config ? config.route : "doctors";
-      router.push(`/${currentLocale}/admin/bookings/${route}`);
+      if (isProvider) {
+        router.push(`/${currentLocale}/provider/bookings/${bookingId}`);
+      } else {
+        const config = PROVIDER_TYPE_CONFIG[providerType];
+        const route = config ? config.route : "doctors";
+        router.push(`/${currentLocale}/admin/bookings/${route}`);
+      }
     },
-    [router, currentLocale]
+    [router, currentLocale, isProvider]
   );
 
   const getRelativeTime = useCallback(
@@ -247,7 +253,7 @@ export default function Header() {
                         {isAr ? "آخر الحجوزات" : "Latest Bookings"}
                       </h3>
                       <p className="text-[11px] text-muted-foreground">
-                        {isAr ? "يتم التحديث كل 30 ثانية" : "Updates every 30s"}
+                        {isAr ? "يتم التحديث كل 10 ثوان" : "Updates every 10s"}
                       </p>
                     </div>
                   </div>
@@ -313,7 +319,7 @@ export default function Header() {
                       return (
                         <div
                           key={booking.id || index}
-                          onClick={() => navigateToBooking(providerType)}
+                          onClick={() => navigateToBooking(booking.id, providerType)}
                           className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-all duration-200 cursor-pointer group/item"
                         >
                           {/* Type Icon */}
@@ -338,10 +344,14 @@ export default function Header() {
                               <span
                                 className={cn(
                                   "text-[9px] font-semibold px-2 py-0.5 rounded-full border flex-shrink-0 uppercase tracking-wide",
-                                  BookingsService.getStatusBadgeColor(booking.status)
+                                  isProvider
+                                    ? ProviderBookingsService.getStatusBadgeColor(booking.status)
+                                    : BookingsService.getStatusBadgeColor(booking.status)
                                 )}
                               >
-                                {BookingsService.capitalizeStatus(booking.status)}
+                                {isProvider
+                                  ? ProviderBookingsService.getStatusLabel(booking.status, isAr)
+                                  : BookingsService.capitalizeStatus(booking.status)}
                               </span>
                             </div>
 
@@ -365,12 +375,12 @@ export default function Header() {
                             </div>
 
                             <div className="flex items-center gap-2 mt-1">
-                              {booking.date && (
+                              {(booking.date || booking.data_at) && (
                                 <div className="flex items-center gap-1">
                                   <Calendar className="w-3 h-3 text-muted-foreground/50" />
                                   <span className="text-[10px] text-muted-foreground">
                                     {BookingsService.formatDate(
-                                      booking.date,
+                                      booking.date || booking.data_at,
                                       currentLocale
                                     )}
                                   </span>
@@ -389,7 +399,9 @@ export default function Header() {
                               )}
                               {booking.created_at && (
                                 <span className="text-[9px] text-muted-foreground/40 ms-auto">
-                                  {getRelativeTime(booking.created_at)}
+                                  {isProvider
+                                    ? booking.created_at
+                                    : getRelativeTime(booking.created_at)}
                                 </span>
                               )}
                             </div>
@@ -420,7 +432,11 @@ export default function Header() {
                 <button
                   onClick={() => {
                     setShowNotifications(false);
-                    router.push(`/${currentLocale}/admin/bookings/doctors`);
+                    router.push(
+                      isProvider
+                        ? `/${currentLocale}/provider/bookings`
+                        : `/${currentLocale}/admin/bookings/doctors`
+                    );
                   }}
                   className="w-full py-2.5 text-sm font-semibold text-primary hover:bg-primary/5 rounded-xl transition-colors"
                 >

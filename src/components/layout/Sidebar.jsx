@@ -41,7 +41,7 @@ export default function Sidebar({ userType, locale }) {
   const [settingsExpanded, setSettingsExpanded] = useState(false);
   const { hasPermission, isSuperAdmin } = usePermissions();
   const { permissionsLoaded } = useAuthStore();
-  const { newDoctorCount, newClinicCount, newHospitalCount } = useNotificationStore();
+  const { newBookingsCount, newDoctorCount, newClinicCount, newHospitalCount } = useNotificationStore();
 
   // Check if current path is in settings section
   const isInSettingsSection = pathname.includes("/admin/settings");
@@ -196,6 +196,7 @@ export default function Sidebar({ userType, locale }) {
         icon: Calendar,
         color: "text-purple-500",
         bgColor: "bg-purple-50",
+        badge: newBookingsCount > 0 ? (newBookingsCount > 99 ? "99+" : String(newBookingsCount)) : null,
       },
     ];
 
@@ -242,7 +243,7 @@ export default function Sidebar({ userType, locale }) {
     );
 
     return items;
-  }, [locale, t, isClinicOrHospital, storedProviderType]);
+  }, [locale, t, isClinicOrHospital, storedProviderType, newBookingsCount]);
 
   const hospitalNavigation = useMemo(() => [
     {

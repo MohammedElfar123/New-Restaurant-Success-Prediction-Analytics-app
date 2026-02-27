@@ -71,6 +71,7 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    const isSilent = originalRequest?._silent === true;
 
     // Handle different error status codes
     if (error.response) {
@@ -99,43 +100,45 @@ apiClient.interceptors.response.use(
               }
             } catch (refreshError) {
               // Refresh failed - logout user
-              handleLogout();
+              if (!isSilent) handleLogout();
             }
           } else {
-            handleLogout();
+            if (!isSilent) handleLogout();
           }
           break;
 
         case 403:
-          toast.error(data?.message || "ليس لديك صلاحية للوصول");
+          if (!isSilent) toast.error(data?.message || "ليس لديك صلاحية للوصول");
           break;
 
         case 404:
-          toast.error(data?.message || "العنصر غير موجود");
+          if (!isSilent) toast.error(data?.message || "العنصر غير موجود");
           break;
 
         case 422:
           // Validation errors
-          if (data?.errors) {
-            const errorMessages = Object.values(data.errors).flat();
-            errorMessages.forEach((msg) => toast.error(msg));
-          } else {
-            toast.error(data?.message || "خطأ في البيانات المدخلة");
+          if (!isSilent) {
+            if (data?.errors) {
+              const errorMessages = Object.values(data.errors).flat();
+              errorMessages.forEach((msg) => toast.error(msg));
+            } else {
+              toast.error(data?.message || "خطأ في البيانات المدخلة");
+            }
           }
           break;
 
         case 500:
         case 503:
-          toast.error("حدث خطأ في الخادم، يرجى المحاولة لاحقاً");
+          if (!isSilent) toast.error("حدث خطأ في الخادم، يرجى المحاولة لاحقاً");
           break;
 
         default:
-          toast.error(data?.message || "حدث خطأ غير متوقع");
+          if (!isSilent) toast.error(data?.message || "حدث خطأ غير متوقع");
       }
     } else if (error.code === "ECONNABORTED") {
-      toast.error("انتهت مهلة الاتصال، يرجى المحاولة مرة أخرى");
+      if (!isSilent) toast.error("انتهت مهلة الاتصال، يرجى المحاولة مرة أخرى");
     } else if (!error.response) {
-      toast.error("لا يمكن الاتصال بالخادم، تحقق من اتصالك بالإنترنت");
+      if (!isSilent) toast.error("لا يمكن الاتصال بالخادم، تحقق من اتصالك بالإنترنت");
     }
 
     return Promise.reject(error);

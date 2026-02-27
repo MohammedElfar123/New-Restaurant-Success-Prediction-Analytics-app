@@ -67,6 +67,7 @@ providerClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    const isSilent = originalRequest?._silent === true;
 
     if (error.response) {
       const { status, data } = error.response;
@@ -95,42 +96,44 @@ providerClient.interceptors.response.use(
                 return providerClient(originalRequest);
               }
             } catch (refreshError) {
-              handleProviderLogout();
+              if (!isSilent) handleProviderLogout();
             }
           } else {
-            handleProviderLogout();
+            if (!isSilent) handleProviderLogout();
           }
           break;
 
         case 403:
-          toast.error(data?.message || "Access denied");
+          if (!isSilent) toast.error(data?.message || "Access denied");
           break;
 
         case 404:
-          toast.error(data?.message || "Not found");
+          if (!isSilent) toast.error(data?.message || "Not found");
           break;
 
         case 422:
-          if (data?.errors) {
-            const errorMessages = Object.values(data.errors).flat();
-            errorMessages.forEach((msg) => toast.error(msg));
-          } else {
-            toast.error(data?.message || "Validation error");
+          if (!isSilent) {
+            if (data?.errors) {
+              const errorMessages = Object.values(data.errors).flat();
+              errorMessages.forEach((msg) => toast.error(msg));
+            } else {
+              toast.error(data?.message || "Validation error");
+            }
           }
           break;
 
         case 500:
         case 503:
-          toast.error("Server error, please try again later");
+          if (!isSilent) toast.error("Server error, please try again later");
           break;
 
         default:
-          toast.error(data?.message || "Unexpected error");
+          if (!isSilent) toast.error(data?.message || "Unexpected error");
       }
     } else if (error.code === "ECONNABORTED") {
-      toast.error("Connection timeout, please try again");
+      if (!isSilent) toast.error("Connection timeout, please try again");
     } else if (!error.response) {
-      toast.error("Cannot connect to server");
+      if (!isSilent) toast.error("Cannot connect to server");
     }
 
     return Promise.reject(error);

@@ -225,7 +225,7 @@ export default function ProvidersPage() {
         <Card className="border-slate-200 hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-slate-600">{t("totalRevenue")}</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-600">{locale === "ar" ? "الإيراد المكتسب" : "Earned Revenue"}</CardTitle>
               <div className="h-9 w-9 bg-pink-50 rounded-lg flex items-center justify-center">
                 <DollarSign className="h-4 w-4 text-pink-600" />
               </div>

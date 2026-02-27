@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
   ArrowRight, Building2, Stethoscope, Mail, Phone, MapPin, Clock,
-  Star, Users, DollarSign, Edit3, CheckCircle, XCircle, Loader2,
+  Star, Users, DollarSign, Edit3, CheckCircle, CheckCircle2, XCircle, Loader2,
   Calendar, User, Globe, BookOpen, Plus, Search, TrendingUp,
   Activity, FileText, RefreshCw
 } from "lucide-react";
@@ -330,10 +330,10 @@ export default function ViewProviderPage() {
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-white">
               <div className="flex items-center gap-2 text-white/70 mb-2">
                 <TrendingUp className="h-4 w-4" />
-                <span className="text-xs">{t("totalRevenue")}</span>
+                <span className="text-xs">{locale === "ar" ? "الإيراد المكتسب" : "Earned Revenue"}</span>
               </div>
               <div className="text-2xl font-bold">
-                {provider.bookings_sum_total ? parseFloat(provider.bookings_sum_total).toLocaleString() : 0}
+                {parseFloat(provider.bookings_completed_sum || provider.bookings_sum_total || 0).toLocaleString()}
               </div>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-white">
@@ -351,6 +351,52 @@ export default function ViewProviderPage() {
                 <span className="text-xs">{t("thisMonth")}</span>
               </div>
               <div className="text-2xl font-bold">{provider.total_booking_revenue_this_month || 0}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Revenue Breakdown */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {/* Earned Revenue */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border-s-4 border-s-emerald-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">{locale === "ar" ? "إيراد مكتسب" : "Earned Revenue"}</p>
+              <p className="text-lg font-bold text-emerald-600">
+                {parseFloat(provider.bookings_completed_sum || 0).toLocaleString()} QAR
+              </p>
+            </div>
+          </div>
+        </div>
+        {/* Pending Revenue */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border-s-4 border-s-amber-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">{locale === "ar" ? "إيراد معلق" : "Pending Revenue"}</p>
+              <p className="text-lg font-bold text-amber-600">
+                {parseFloat(provider.bookings_pending_sum || 0).toLocaleString()} QAR
+              </p>
+            </div>
+          </div>
+        </div>
+        {/* Lost Revenue */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border-s-4 border-s-rose-500">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center">
+              <XCircle className="w-5 h-5 text-rose-600" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">{locale === "ar" ? "إيراد ضائع" : "Lost Revenue"}</p>
+              <p className="text-lg font-bold text-rose-600">
+                {parseFloat(provider.bookings_cancelled_sum || 0).toLocaleString()} QAR
+              </p>
             </div>
           </div>
         </div>
