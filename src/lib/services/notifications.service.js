@@ -18,14 +18,13 @@ const NotificationsService = {
 
       if (response.data?.status === "success") {
         const data = response.data.data;
-        const items = Array.isArray(data) ? data : (data?.items || data?.data || []);
+        const items = data?.notifications || [];
 
-        const apiMeta = data?.meta || {};
         const meta = {
-          current_page: apiMeta.current_page || data?.current_page || params.page || 1,
-          last_page: apiMeta.last_page || data?.last_page || 1,
-          total: apiMeta.total || data?.total || items.length,
-          per_page: apiMeta.per_page || data?.per_page || params.per_page || 10,
+          current_page: data?.current_page || params.page || 1,
+          last_page: data?.last_page || 1,
+          total: data?.count || items.length,
+          per_page: params.per_page || params.count_paginate || 10,
         };
 
         return {
@@ -255,9 +254,10 @@ const NotificationsService = {
       const response = await apiClient.get("/notifications/users", { params });
 
       if (response.data?.status === "success") {
+        const data = response.data.data;
         return {
           success: true,
-          data: response.data.data || [],
+          data: data?.users || [],
           message: response.data.message,
         };
       }

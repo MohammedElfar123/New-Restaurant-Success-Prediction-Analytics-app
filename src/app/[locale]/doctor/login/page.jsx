@@ -159,7 +159,7 @@ export default function DoctorLoginPage() {
 
       {/* Footer */}
       <div className="absolute bottom-4 text-center text-white/80 text-sm">
-        © 2025 Mawadk. {locale === "ar" ? "جميع الحقوق محفوظة" : "All rights reserved"}
+        © 2026 Mawadk. {locale === "ar" ? "جميع الحقوق محفوظة" : "All rights reserved"}
       </div>
     </div>
   );

@@ -189,7 +189,7 @@ export default function HospitalLoginPage() {
 
           {/* Footer */}
           <p className="text-center text-muted-foreground text-sm mt-6">
-            © 2025 Mawadk. {locale === "ar" ? "جميع الحقوق محفوظة" : "All rights reserved"}
+            © 2026 Mawadk. {locale === "ar" ? "جميع الحقوق محفوظة" : "All rights reserved"}
           </p>
         </div>
       </div>

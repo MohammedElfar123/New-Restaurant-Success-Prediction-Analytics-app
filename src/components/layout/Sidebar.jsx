@@ -605,7 +605,7 @@ export default function Sidebar({ userType, locale }) {
       <div className="border-t border-border/50 p-4 bg-card/50 backdrop-blur-sm">
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
           <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-          <span className="font-medium">© 2025 Mawadk</span>
+          <span className="font-medium">© 2026 Mawadk</span>
         </div>
         <p className="text-center text-[10px] text-muted-foreground/60 mt-1">
           Healthcare Platform
