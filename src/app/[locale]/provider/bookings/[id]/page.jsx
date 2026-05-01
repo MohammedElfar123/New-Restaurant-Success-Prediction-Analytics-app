@@ -85,6 +85,10 @@ export default function ProviderBookingDetailsPage() {
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusError, setStatusError] = useState("");
 
+  // Cancellation reason
+  const [cancellationReasons, setCancellationReasons] = useState([]);
+  const [selectedReasonId, setSelectedReasonId] = useState("");
+
   // Fetch booking
   useEffect(() => {
     const fetchBooking = async () => {
@@ -101,10 +105,44 @@ export default function ProviderBookingDetailsPage() {
     }
   }, [id]);
 
+  // Fetch cancellation reasons once (used in modal when status === cancelled)
+  useEffect(() => {
+    const fetchReasons = async () => {
+      const result = await ProviderBookingsService.getCancellationReasons();
+      if (result.success) {
+        setCancellationReasons(result.data);
+      }
+    };
+    fetchReasons();
+  }, []);
+
+  // Hours remaining until the appointment (negative if in the past).
+  // The backend rejects cancellations within 12 hours; show that constraint in the UI.
+  const hoursUntilAppointment = (() => {
+    if (!booking?.date || !booking?.time) return null;
+    const dt = new Date(`${booking.date}T${booking.time}`);
+    if (Number.isNaN(dt.getTime())) return null;
+    return (dt.getTime() - Date.now()) / (1000 * 60 * 60);
+  })();
+  const isWithinCancelWindow =
+    hoursUntilAppointment !== null && hoursUntilAppointment <= 12;
+
   // Handle status update
   const handleSubmitStatus = async () => {
     if (!selectedStatus) {
       setStatusError(isRTL ? "يرجى اختيار الحالة" : "Please select a status");
+      return;
+    }
+    if (selectedStatus === "cancelled" && !selectedReasonId) {
+      setStatusError(isRTL ? "يرجى اختيار سبب الإلغاء" : "Please select a cancellation reason");
+      return;
+    }
+    if (selectedStatus === "cancelled" && isWithinCancelWindow) {
+      setStatusError(
+        isRTL
+          ? "لا يمكن إلغاء الحجز قبل 12 ساعة من الموعد"
+          : "Booking cannot be cancelled less than 12 hours before the appointment"
+      );
       return;
     }
 
@@ -114,7 +152,7 @@ export default function ProviderBookingDetailsPage() {
     const result = await ProviderBookingsService.updateBookingStatus(
       booking.id,
       selectedStatus,
-      selectedStatus === "cancelled" ? 3 : null
+      selectedStatus === "cancelled" ? Number(selectedReasonId) : null
     );
 
     if (result.success) {
@@ -133,6 +171,7 @@ export default function ProviderBookingDetailsPage() {
 
   const openStatusModal = () => {
     setSelectedStatus("");
+    setSelectedReasonId("");
     setStatusError("");
     setStatusModalOpen(true);
   };
@@ -603,8 +642,55 @@ export default function ProviderBookingDetailsPage() {
               </Select>
             </div>
 
-            {/* Warning */}
+            {/* Cancellation reason picker (required when cancelling) */}
             {selectedStatus === "cancelled" && (
+              <div className="space-y-2">
+                <Label htmlFor="reason">
+                  {isRTL ? "سبب الإلغاء" : "Cancellation Reason"}
+                  <span className="text-rose-600 ms-1">*</span>
+                </Label>
+                <Select value={selectedReasonId} onValueChange={setSelectedReasonId}>
+                  <SelectTrigger id="reason">
+                    <SelectValue
+                      placeholder={
+                        cancellationReasons.length === 0
+                          ? (isRTL ? "جاري التحميل..." : "Loading...")
+                          : (isRTL ? "اختر سبباً" : "Choose a reason")
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cancellationReasons.map((r) => (
+                      <SelectItem key={r.id} value={String(r.id)}>
+                        {r.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* 12-hour rule warning — backend rejects cancellations within 12h */}
+            {selectedStatus === "cancelled" && isWithinCancelWindow && (
+              <div className="bg-rose-50 border border-rose-300 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-rose-700 text-sm">
+                      {isRTL ? "لا يمكن الإلغاء" : "Cancellation blocked"}
+                    </p>
+                    <p className="text-xs text-rose-600 mt-1">
+                      {isRTL
+                        ? "تبقى أقل من 12 ساعة على الموعد. سياسة الإلغاء لا تسمح بإلغاء حجز خلال هذه الفترة."
+                        : "Less than 12 hours remain before the appointment. Cancellations within this window are not permitted."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Warning */}
+            {selectedStatus === "cancelled" && !isWithinCancelWindow && (
               <div className="bg-rose-50 border border-rose-200 rounded-lg p-4">
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="h-5 w-5 text-rose-600 flex-shrink-0 mt-0.5" />
@@ -632,7 +718,12 @@ export default function ProviderBookingDetailsPage() {
             </Button>
             <Button
               onClick={handleSubmitStatus}
-              disabled={statusLoading || !selectedStatus}
+              disabled={
+                statusLoading ||
+                !selectedStatus ||
+                (selectedStatus === "cancelled" &&
+                  (!selectedReasonId || isWithinCancelWindow))
+              }
               className={selectedStatus === "cancelled" ? "bg-rose-600 hover:bg-rose-700" : ""}
             >
               {statusLoading ? (

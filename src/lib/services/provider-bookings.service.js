@@ -227,18 +227,12 @@ const ProviderBookingsService = {
 
   /**
    * Get Cancellation Reasons
-   * GET /api/v1/bookings/canceled/reasons (app endpoint, not provider-panel)
-   * @param {string|null} search - Optional search query
-   * @returns {Promise} - Array of { id, title }
+   * GET /provider-panel/cancellation-reasons (admin-guarded list of active 'User' reasons)
+   * @returns {Promise} - { success, data: Array of { id, title } }
    */
-  getCancellationReasons: async (search = null) => {
+  getCancellationReasons: async () => {
     try {
-      const baseURL = providerClient.defaults.baseURL.replace("/provider-panel", "");
-      const params = search ? { search } : {};
-      const response = await axios.get(`${baseURL}/bookings/canceled/reasons`, {
-        params,
-        headers: providerClient.defaults.headers,
-      });
+      const response = await providerClient.get("/cancellation-reasons");
 
       if (response.data?.status === "success") {
         return {
