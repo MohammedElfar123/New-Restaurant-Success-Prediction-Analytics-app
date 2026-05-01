@@ -195,6 +195,36 @@ const ProviderDoctorsService = {
   },
 
   /**
+   * Delete a provider doctor (soft-delete on the backend).
+   * DELETE /provider-doctors/{id}
+   * @param {number} id - Doctor ID
+   * @returns {Promise} - { success, message }
+   */
+  deleteProviderDoctor: async (id) => {
+    try {
+      const response = await getClient().delete(`/provider-doctors/${id}`);
+
+      if (response.data?.status === "success") {
+        return {
+          success: true,
+          message: response.data.message || "Doctor deleted successfully",
+        };
+      }
+
+      return {
+        success: false,
+        message: response.data?.message || "Failed to delete doctor",
+      };
+    } catch (error) {
+      console.error("[ProviderDoctorsService] Delete doctor error:", error);
+      return {
+        success: false,
+        message: error.response?.data?.message || "Error deleting doctor",
+      };
+    }
+  },
+
+  /**
    * Build FormData for create/update
    * @param {Object} data - Doctor data
    * @returns {FormData}

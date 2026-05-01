@@ -212,6 +212,29 @@ export default function ProviderDoctorsPage() {
     router.push(`/${locale}/provider/doctors/${doctorId}`);
   };
 
+  // Delete doctor (with confirm)
+  const [deleteTarget, setDeleteTarget] = useState(null); // { id, name }
+  const [deleting, setDeleting] = useState(false);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const result = await ProviderDoctorsService.deleteProviderDoctor(deleteTarget.id);
+      if (result.success) {
+        toast.success(result.message || (isRTL ? "تم حذف الدكتور" : "Doctor deleted"));
+        setDeleteTarget(null);
+        fetchDoctors();
+      } else {
+        toast.error(result.message || (isRTL ? "فشل الحذف" : "Delete failed"));
+      }
+    } catch {
+      toast.error(isRTL ? "حدث خطأ" : "An error occurred");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   // Open create modal
   const handleOpenCreate = () => {
     setFormData({
@@ -607,6 +630,17 @@ export default function ProviderDoctorsPage() {
                                   </>
                                 )}
                               </button>
+                              <div className="border-t border-slate-100 my-1" />
+                              <button
+                                onClick={() => {
+                                  setOpenDropdown(null);
+                                  setDeleteTarget({ id: doctor.id, name: doctor.name });
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 transition-colors"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                {isRTL ? "حذف" : "Delete"}
+                              </button>
                             </div>
                           )}
                         </div>
@@ -619,6 +653,55 @@ export default function ProviderDoctorsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => !deleting && setDeleteTarget(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-5 flex items-start gap-4">
+              <div className="h-12 w-12 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="h-6 w-6 text-rose-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-slate-900 mb-1">
+                  {isRTL ? "تأكيد حذف الطبيب" : "Delete Doctor"}
+                </h3>
+                <p className="text-sm text-slate-600">
+                  {isRTL
+                    ? `هل أنت متأكد من حذف "${deleteTarget.name}"؟ لن يتم حذف الحجوزات السابقة، لكن لن يكون متاحاً للحجوزات الجديدة.`
+                    : `Are you sure you want to delete "${deleteTarget.name}"? Past bookings will remain, but the doctor will not appear in new booking flows.`}
+                </p>
+              </div>
+            </div>
+            <div className="px-6 pb-5 flex gap-3 justify-end border-t border-slate-100 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+              >
+                {isRTL ? "إلغاء" : "Cancel"}
+              </Button>
+              <Button
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+                className="bg-rose-600 hover:bg-rose-700"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin me-2" />
+                    {isRTL ? "جاري الحذف..." : "Deleting..."}
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 me-2" />
+                    {isRTL ? "تأكيد الحذف" : "Confirm Delete"}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create Doctor Modal */}
       {showModal && (
