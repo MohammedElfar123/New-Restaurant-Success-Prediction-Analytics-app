@@ -300,6 +300,11 @@ export default function ProviderBookingDetailsPage() {
         </div>
       </div>
 
+      {/* Status explanation card — only renders for outcome statuses (cancelled,
+          expired, no_show, provider_no_show). Tells the provider/admin
+          exactly what happened and what's expected of them. */}
+      <StatusExplanationCard booking={booking} isRTL={isRTL} />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
@@ -743,5 +748,111 @@ export default function ProviderBookingDetailsPage() {
         </DialogContent>
       </Dialog>
     </DashboardLayout>
+  );
+}
+
+/**
+ * Contextual block that tells the provider / admin what just happened to a
+ * booking that is no longer active and what (if anything) is expected of them.
+ * Renders nothing for active states.
+ */
+function StatusExplanationCard({ booking, isRTL }) {
+  if (!booking) return null;
+
+  // Use the precise server-side status (status_raw) when present so the new
+  // negative-scenario buckets render their own copy instead of a generic
+  // "Cancelled".
+  const raw = booking.status_raw || booking.status;
+
+  if (
+    raw === "pending" ||
+    raw === "confirmed" ||
+    raw === "completed"
+  ) {
+    return null;
+  }
+
+  const config = {
+    cancelled: {
+      icon: XCircle,
+      color: "text-rose-700",
+      bg: "bg-rose-50",
+      border: "border-rose-200",
+      iconBg: "bg-rose-100",
+      title: isRTL ? "تم إلغاء الحجز" : "Booking Cancelled",
+      description:
+        booking?.cancellation_reason
+          ? (isRTL
+              ? `تم إلغاء هذا الحجز. السبب: ${booking.cancellation_reason}`
+              : `This booking was cancelled. Reason: ${booking.cancellation_reason}`)
+          : (isRTL
+              ? "تم إلغاء هذا الحجز."
+              : "This booking has been cancelled."),
+    },
+    expired: {
+      icon: Timer,
+      color: "text-zinc-700",
+      bg: "bg-zinc-50",
+      border: "border-zinc-300",
+      iconBg: "bg-zinc-100",
+      title: isRTL ? "انتهت صلاحية الحجز" : "Booking Expired",
+      description: isRTL
+        ? "لم يتم تأكيد هذا الحجز في الوقت المسموح به فألغى النظام الحجز تلقائياً. لا يلزم منك أي إجراء، وإذا كان هناك دفع مسبق فسيتم رد المبلغ."
+        : "This booking was not confirmed in time, so the system auto-cancelled it. No action is required; any prepayment will be refunded.",
+    },
+    no_show: {
+      icon: UserX,
+      color: "text-orange-800",
+      bg: "bg-orange-50",
+      border: "border-orange-300",
+      iconBg: "bg-orange-100",
+      title: isRTL ? "تم تسجيل عدم حضور المريض" : "Patient Marked No Show",
+      description: isRTL
+        ? "تم تسجيل عدم حضور المريض في الموعد المحدد. هذا السجل يؤثر على تصنيف العميل وقد يمنع استرداد المبلغ بحسب السياسة."
+        : "The patient was marked as a no-show for this appointment. This affects the customer's record and may forfeit any prepayment per policy.",
+    },
+    provider_no_show: {
+      icon: AlertTriangle,
+      color: "text-rose-900",
+      bg: "bg-rose-50",
+      border: "border-rose-400",
+      iconBg: "bg-rose-100",
+      title: isRTL
+        ? "تم الإبلاغ عن عدم حضور مقدم الخدمة"
+        : "Provider Marked As Did Not Attend",
+      description: isRTL
+        ? "تم الإبلاغ عن عدم حضور مقدم الخدمة لهذا الموعد. سيتم رد المبلغ بالكامل للمريض، وقد يخضع مقدم الخدمة لإجراء بحسب السياسة."
+        : "The provider did not attend this appointment. A full refund will be issued to the patient, and the provider may be subject to action per policy.",
+    },
+  }[raw];
+
+  if (!config) return null;
+
+  const Icon = config.icon;
+
+  return (
+    <div className={`mb-6 rounded-xl border ${config.border} ${config.bg} p-4`}>
+      <div className="flex items-start gap-3">
+        <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${config.iconBg}`}>
+          <Icon className={`h-5 w-5 ${config.color}`} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className={`font-semibold text-sm ${config.color} mb-1`}>
+            {config.title}
+          </h4>
+          <p className="text-sm text-slate-700 leading-relaxed">
+            {config.description}
+          </p>
+          {/* Audit trail: when the system auto-actioned this row, surface the
+              reason key so support can trace it back to a cron run. */}
+          {booking.auto_action_reason && (
+            <p className="text-xs text-slate-500 mt-2">
+              {isRTL ? "إجراء النظام: " : "System action: "}
+              <code className="bg-slate-100 px-1.5 py-0.5 rounded">{booking.auto_action_reason}</code>
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
