@@ -9,7 +9,7 @@ const RatingsService = {
    * List ratings with filtering and pagination.
    * @param {Object} params
    * @param {'all'|'provider'|'provider_doctor'} [params.type='all']
-   * @param {number} [params.rating] - 1..5 (matches floor of rating)
+   * @param {number[]} [params.ratings] - multi-select 1..5 (matches floor of rating)
    * @param {string} [params.search] - matches comment text
    * @param {number} [params.page]
    * @param {number} [params.per_page=10]
@@ -19,7 +19,17 @@ const RatingsService = {
    */
   getRatings: async (params = {}) => {
     try {
-      const response = await apiClient.get("/ratings", { params });
+      // Backend accepts ratings[] (preferred multi-select). Convert empty array to no param.
+      const queryParams = { ...params };
+      if (Array.isArray(queryParams.ratings)) {
+        if (queryParams.ratings.length === 0) {
+          delete queryParams.ratings;
+        } else {
+          queryParams["ratings[]"] = queryParams.ratings;
+          delete queryParams.ratings;
+        }
+      }
+      const response = await apiClient.get("/ratings", { params: queryParams });
 
       if (response.data?.status === "success") {
         return {

@@ -30,7 +30,7 @@ export default function ReviewsPage() {
   const isRTL = locale === "ar";
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [ratingFilter, setRatingFilter] = useState("all");
+  const [ratingFilter, setRatingFilter] = useState([]); // empty = "all"
   const [typeFilter, setTypeFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [items, setItems] = useState([]);
@@ -47,7 +47,7 @@ export default function ReviewsPage() {
     try {
       const params = { page: currentPage, per_page: 10 };
       if (searchQuery) params.search = searchQuery;
-      if (ratingFilter !== "all") params.rating = ratingFilter;
+      if (ratingFilter.length > 0) params.ratings = ratingFilter; // service serialises to ratings[]
       if (typeFilter !== "all") params.type = typeFilter;
 
       const result = await RatingsService.getRatings(params);
@@ -255,23 +255,39 @@ export default function ReviewsPage() {
                     </Button>
                   ))}
                 </div>
-                {/* Rating Filter */}
+                {/* Rating Filter — multi-select; empty array = "all" */}
                 <div className="flex items-center gap-2">
-                  {["all", "5", "4", "3", "2", "1"].map((r) => (
-                    <Button
-                      key={r}
-                      variant={ratingFilter === r ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => {
-                        setRatingFilter(r);
-                        setCurrentPage(1);
-                      }}
-                      className="h-9 gap-1"
-                    >
-                      {r !== "all" && <Star className="w-3 h-3 fill-current" />}
-                      {r === "all" ? tc("all") : r}
-                    </Button>
-                  ))}
+                  <Button
+                    variant={ratingFilter.length === 0 ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setRatingFilter([]);
+                      setCurrentPage(1);
+                    }}
+                    className="h-9 gap-1"
+                  >
+                    {tc("all")}
+                  </Button>
+                  {["5", "4", "3", "2", "1"].map((r) => {
+                    const isSelected = ratingFilter.includes(r);
+                    return (
+                      <Button
+                        key={r}
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          setRatingFilter((prev) =>
+                            prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]
+                          );
+                          setCurrentPage(1);
+                        }}
+                        className="h-9 gap-1"
+                      >
+                        <Star className="w-3 h-3 fill-current" />
+                        {r}
+                      </Button>
+                    );
+                  })}
                 </div>
                 <div className="relative flex-1 md:flex-initial">
                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
