@@ -59,6 +59,9 @@ const StatusIcons = {
   confirmed: CheckCircle,
   completed: CheckCircle2,
   cancelled: XCircle,
+  expired: AlertCircle,
+  no_show: UserX,
+  provider_no_show: UserX,
 };
 
 // Payment icons
@@ -182,14 +185,18 @@ export default function ProviderBookingDetailsPage() {
     return <Icon className="h-5 w-5" />;
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, apiLabel = null) => {
     const config = {
       pending: { className: "bg-amber-50 text-amber-700 hover:bg-amber-50 border border-amber-200", label: isRTL ? "معلق" : "Pending" },
       confirmed: { className: "bg-blue-50 text-blue-700 hover:bg-blue-50 border border-blue-200", label: isRTL ? "مؤكد" : "Confirmed" },
       completed: { className: "bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border border-emerald-200", label: isRTL ? "مكتمل" : "Completed" },
       cancelled: { className: "bg-rose-50 text-rose-700 hover:bg-rose-50 border border-rose-200", label: isRTL ? "ملغي" : "Cancelled" },
+      expired: { className: "bg-zinc-100 text-zinc-700 hover:bg-zinc-100 border border-zinc-300", label: isRTL ? "منتهي" : "Expired" },
+      no_show: { className: "bg-orange-100 text-orange-800 hover:bg-orange-100 border border-orange-300", label: isRTL ? "لم يحضر" : "No Show" },
+      provider_no_show: { className: "bg-rose-100 text-rose-900 hover:bg-rose-100 border border-rose-400", label: isRTL ? "مقدم الخدمة لم يحضر" : "Provider No Show" },
     };
-    return config[status] || config.pending;
+    const c = config[status] || config.pending;
+    return apiLabel ? { ...c, label: apiLabel } : c;
   };
 
   const getPaymentIcon = (method) => {
@@ -277,10 +284,10 @@ export default function ProviderBookingDetailsPage() {
             </div>
           </div>
           <Badge
-            className={`${getStatusBadge(booking.status).className} font-medium px-3 py-1`}
+            className={`${getStatusBadge(booking.status, booking.status_label).className} font-medium px-3 py-1`}
           >
             {getStatusIcon(booking.status)}
-            <span className="ms-1.5">{getStatusBadge(booking.status).label}</span>
+            <span className="ms-1.5">{getStatusBadge(booking.status, booking.status_label).label}</span>
           </Badge>
         </div>
         <div className="flex items-center gap-3">

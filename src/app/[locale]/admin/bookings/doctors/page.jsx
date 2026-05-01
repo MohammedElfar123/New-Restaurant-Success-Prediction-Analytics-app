@@ -33,6 +33,7 @@ import {
   CheckCircle2,
   CreditCard,
   Banknote,
+  AlertCircle,
 } from "lucide-react";
 
 // Status icon mapping
@@ -46,6 +47,9 @@ const StatusIcons = {
   cancelled: XCircle,
   noshow: UserX,
   no_show: UserX,
+  provider_no_show: UserX,
+  providernoshow: UserX,
+  expired: AlertCircle,
   rescheduled: RefreshCw,
 };
 
@@ -198,11 +202,13 @@ export default function DoctorBookingsPage() {
     cancelled: allFilteredBookings.filter((b) => b.status?.toLowerCase() === "cancelled").length,
   };
 
-  // Get translated status
-  const getStatusLabel = (status) => {
+  // Get translated status — prefer API-supplied status_label when available
+  const getStatusLabel = (status, apiLabel = null) => {
+    if (apiLabel) return apiLabel;
     if (!status) return "-";
-    const key = status.toLowerCase().replace("_", "");
-    return t(key) || BookingsService.capitalizeStatus(status);
+    const lower = status.toLowerCase();
+    const collapsed = lower.replace(/_/g, "");
+    return t(lower) || t(collapsed) || BookingsService.capitalizeStatus(status);
   };
 
   // Get translated payment method
@@ -337,6 +343,9 @@ export default function DoctorBookingsPage() {
                 { key: "confirmed", label: t("confirmed"), icon: CheckCircle },
                 { key: "completed", label: t("completed"), icon: CheckCircle2 },
                 { key: "cancelled", label: t("cancelled"), icon: XCircle },
+                { key: "expired", label: t("expired"), icon: AlertCircle },
+                { key: "no_show", label: t("no_show"), icon: UserX },
+                { key: "provider_no_show", label: t("provider_no_show"), icon: UserX },
               ].map((tab) => {
                 const TabIcon = tab.icon;
                 const isActive = statusFilter === tab.key;
@@ -499,7 +508,7 @@ export default function DoctorBookingsPage() {
                         )} font-medium`}
                       >
                         {getStatusIcon(booking.status)}
-                        {getStatusLabel(booking.status)}
+                        {getStatusLabel(booking.status, booking.status_label)}
                       </Badge>
                     </td>
                     <td className="py-4 px-4">

@@ -33,6 +33,8 @@ import {
   Banknote,
   Wallet,
   Tag,
+  AlertCircle,
+  UserX,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -42,6 +44,9 @@ const StatusIcons = {
   confirmed: CheckCircle,
   completed: CheckCircle2,
   cancelled: XCircle,
+  expired: AlertCircle,
+  no_show: UserX,
+  provider_no_show: UserX,
 };
 
 // Payment method icons
@@ -212,16 +217,21 @@ export default function ProviderBookingsPage() {
   };
 
   // Helper: get status badge
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, apiLabel = null) => {
     const Icon = StatusIcons[status] || Clock;
     const config = {
       pending: { className: "bg-amber-50 text-amber-700 hover:bg-amber-50 border border-amber-200", label: isRTL ? "معلق" : "Pending" },
       confirmed: { className: "bg-blue-50 text-blue-700 hover:bg-blue-50 border border-blue-200", label: isRTL ? "مؤكد" : "Confirmed" },
       completed: { className: "bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border border-emerald-200", label: isRTL ? "مكتمل" : "Completed" },
       cancelled: { className: "bg-rose-50 text-rose-700 hover:bg-rose-50 border border-rose-200", label: isRTL ? "ملغي" : "Cancelled" },
+      expired: { className: "bg-zinc-100 text-zinc-700 hover:bg-zinc-100 border border-zinc-300", label: isRTL ? "منتهي" : "Expired" },
+      no_show: { className: "bg-orange-100 text-orange-800 hover:bg-orange-100 border border-orange-300", label: isRTL ? "لم يحضر" : "No Show" },
+      provider_no_show: { className: "bg-rose-100 text-rose-900 hover:bg-rose-100 border border-rose-400", label: isRTL ? "مقدم الخدمة لم يحضر" : "Provider No Show" },
     };
     const c = config[status] || config.pending;
-    return { ...c, icon: <Icon className="h-3.5 w-3.5" /> };
+    // Prefer API-supplied status_label when available
+    const label = apiLabel || c.label;
+    return { ...c, label, icon: <Icon className="h-3.5 w-3.5" /> };
   };
 
   // Helper: get payment badge
@@ -324,6 +334,9 @@ export default function ProviderBookingsPage() {
                 { key: "confirmed", label: isRTL ? "مؤكد" : "Confirmed", icon: CheckCircle, count: stats.confirmed },
                 { key: "completed", label: isRTL ? "مكتمل" : "Completed", icon: CheckCircle2, count: stats.completed },
                 { key: "cancelled", label: isRTL ? "ملغي" : "Cancelled", icon: XCircle, count: stats.cancelled },
+                { key: "expired", label: isRTL ? "منتهي" : "Expired", icon: AlertCircle, count: 0 },
+                { key: "no_show", label: isRTL ? "لم يحضر" : "No Show", icon: UserX, count: 0 },
+                { key: "provider_no_show", label: isRTL ? "مقدم الخدمة لم يحضر" : "Provider No Show", icon: UserX, count: 0 },
               ].map((tab) => {
                 const TabIcon = tab.icon;
                 const isActive = statusFilter === tab.key;
@@ -393,7 +406,7 @@ export default function ProviderBookingsPage() {
               </thead>
               <tbody>
                 {bookings.map((booking, index) => {
-                  const statusBadge = getStatusBadge(booking.status);
+                  const statusBadge = getStatusBadge(booking.status, booking.status_label);
                   const paymentBadge = getPaymentBadge(booking.payment_method);
                   const doctor = ProviderBookingsService.getProviderDoctor(booking.provider_doctor);
                   const customer = booking.customer || booking.client;

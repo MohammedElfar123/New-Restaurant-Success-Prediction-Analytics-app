@@ -13,6 +13,9 @@ const BookingsService = {
     CONFIRMED: "confirmed",
     COMPLETED: "completed",
     CANCELLED: "cancelled",
+    EXPIRED: "expired",
+    NO_SHOW: "no_show",
+    PROVIDER_NO_SHOW: "provider_no_show",
   },
 
   /**
@@ -28,10 +31,13 @@ const BookingsService = {
    * Status transitions - which statuses can transition to which
    */
   STATUS_TRANSITIONS: {
-    pending: ["confirmed", "cancelled"],
-    confirmed: ["completed", "cancelled"],
+    pending: ["confirmed", "cancelled", "no_show", "provider_no_show"],
+    confirmed: ["completed", "cancelled", "no_show", "provider_no_show"],
     completed: [], // Final state
     cancelled: [], // Final state
+    expired: [], // Final state (system-only)
+    no_show: [], // Final state
+    provider_no_show: [], // Final state
   },
 
   /**
@@ -207,7 +213,10 @@ const BookingsService = {
       inprogress: "bg-purple-50 text-purple-700 border-purple-200",
       completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
       cancelled: "bg-rose-50 text-rose-700 border-rose-200",
-      noshow: "bg-slate-50 text-slate-700 border-slate-200",
+      expired: "bg-zinc-100 text-zinc-700 border-zinc-300",
+      no_show: "bg-orange-100 text-orange-800 border-orange-300",
+      noshow: "bg-orange-100 text-orange-800 border-orange-300",
+      provider_no_show: "bg-rose-100 text-rose-900 border-rose-400",
       rescheduled: "bg-orange-50 text-orange-700 border-orange-200",
     };
     return colors[normalizedStatus] || "bg-slate-50 text-slate-700 border-slate-200";

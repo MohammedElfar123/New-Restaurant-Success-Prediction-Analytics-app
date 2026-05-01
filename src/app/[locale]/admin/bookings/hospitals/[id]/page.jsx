@@ -42,6 +42,10 @@ const StatusIcons = {
   completed: CheckCircle2,
   cancelled: XCircle,
   no_show: UserX,
+  noshow: UserX,
+  provider_no_show: UserX,
+  providernoshow: UserX,
+  expired: AlertCircle,
 };
 
 // Payment icons
@@ -95,10 +99,12 @@ export default function HospitalBookingDetailsPage() {
     return <Icon className="h-5 w-5" />;
   };
 
-  const getStatusLabel = (status) => {
+  const getStatusLabel = (status, apiLabel = null) => {
+    if (apiLabel) return apiLabel;
     if (!status) return "-";
-    const key = status.toLowerCase().replace("_", "");
-    return t(key) || BookingsService.capitalizeStatus(status);
+    const lower = status.toLowerCase();
+    const collapsed = lower.replace(/_/g, "");
+    return t(lower) || t(collapsed) || BookingsService.capitalizeStatus(status);
   };
 
   const getPaymentLabel = (method) => {
@@ -175,7 +181,7 @@ export default function HospitalBookingDetailsPage() {
             className={`${BookingsService.getStatusBadgeColor(booking.status)} font-medium px-3 py-1`}
           >
             {getStatusIcon(booking.status)}
-            <span className="ms-1.5">{getStatusLabel(booking.status)}</span>
+            <span className="ms-1.5">{getStatusLabel(booking.status, booking.status_label)}</span>
           </Badge>
         </div>
         <div className="flex items-center gap-3">

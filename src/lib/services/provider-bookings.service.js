@@ -44,6 +44,9 @@ const ProviderBookingsService = {
     CONFIRMED: "confirmed",
     COMPLETED: "completed",
     CANCELLED: "cancelled",
+    EXPIRED: "expired",
+    NO_SHOW: "no_show",
+    PROVIDER_NO_SHOW: "provider_no_show",
   },
 
   // Payment status constants
@@ -55,10 +58,13 @@ const ProviderBookingsService = {
 
   // Valid status transitions
   STATUS_TRANSITIONS: {
-    pending: ["confirmed", "cancelled"],
-    confirmed: ["completed", "cancelled"],
+    pending: ["confirmed", "cancelled", "no_show", "provider_no_show"],
+    confirmed: ["completed", "cancelled", "no_show", "provider_no_show"],
     completed: [], // final state
     cancelled: [], // final state
+    expired: [], // final state (system-only)
+    no_show: [], // final state
+    provider_no_show: [], // final state
   },
 
   /**
@@ -266,6 +272,9 @@ const ProviderBookingsService = {
       confirmed: "bg-blue-50 text-blue-700 border-blue-200",
       completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
       cancelled: "bg-rose-50 text-rose-700 border-rose-200",
+      expired: "bg-zinc-100 text-zinc-700 border-zinc-300",
+      no_show: "bg-orange-100 text-orange-800 border-orange-300",
+      provider_no_show: "bg-rose-100 text-rose-900 border-rose-400",
     };
     return colors[status] || "bg-slate-100 text-slate-700 border-slate-200";
   },
@@ -296,6 +305,9 @@ const ProviderBookingsService = {
       confirmed: isRTL ? "مؤكد" : "Confirmed",
       completed: isRTL ? "مكتمل" : "Completed",
       cancelled: isRTL ? "ملغي" : "Cancelled",
+      expired: isRTL ? "منتهي" : "Expired",
+      no_show: isRTL ? "لم يحضر" : "No Show",
+      provider_no_show: isRTL ? "مقدم الخدمة لم يحضر" : "Provider No Show",
     };
     return labels[status] || status;
   },

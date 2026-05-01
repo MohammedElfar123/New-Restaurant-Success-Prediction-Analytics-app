@@ -30,6 +30,8 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
+  AlertCircle,
+  UserX,
 } from "lucide-react";
 
 // Status icon mapping (lowercase to match API values)
@@ -38,6 +40,9 @@ const StatusIcons = {
   confirmed: CheckCircle,
   completed: CheckCircle2,
   cancelled: XCircle,
+  expired: AlertCircle,
+  no_show: UserX,
+  provider_no_show: UserX,
 };
 
 export default function BookingStatusModal({ open, onClose, booking, onStatusUpdated }) {
