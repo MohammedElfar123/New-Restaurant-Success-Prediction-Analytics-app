@@ -191,11 +191,12 @@ export default function HospitalBookingsPage() {
   };
 
   // Calculate stats from bookings
+  // Stats computed from the full filtered set (allFilteredBookings), NOT current-page slice
   const stats = {
     total: meta.total,
-    pending: bookings.filter((b) => b.status?.toLowerCase() === "pending").length,
-    completed: bookings.filter((b) => b.status?.toLowerCase() === "completed").length,
-    cancelled: bookings.filter((b) => b.status?.toLowerCase() === "cancelled").length,
+    pending: allFilteredBookings.filter((b) => b.status?.toLowerCase() === "pending").length,
+    completed: allFilteredBookings.filter((b) => b.status?.toLowerCase() === "completed").length,
+    cancelled: allFilteredBookings.filter((b) => b.status?.toLowerCase() === "cancelled").length,
   };
 
   // Get translated status

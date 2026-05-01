@@ -113,18 +113,19 @@ export default function ProviderBookingsPage() {
 
         setAllBookings(items);
 
-        // Use reports from API if available, otherwise calculate
+        // Use reports from API if available, otherwise calculate from current page
         if (result.reports) {
           setReports(result.reports);
         }
 
-        // Calculate stats from all bookings
+        // Prefer API-level totals (consistent across pagination); fall back to page-only counts
+        const r = result.reports || {};
         setStats({
-          total: items.length,
-          pending: items.filter((b) => b.status === "pending").length,
-          confirmed: items.filter((b) => b.status === "confirmed").length,
-          completed: items.filter((b) => b.status === "completed").length,
-          cancelled: items.filter((b) => b.status === "cancelled").length,
+          total: r.total_bookings ?? items.length,
+          pending: r.pending_bookings ?? items.filter((b) => b.status === "pending").length,
+          confirmed: r.confirmed_bookings ?? items.filter((b) => b.status === "confirmed").length,
+          completed: r.completed_bookings ?? items.filter((b) => b.status === "completed").length,
+          cancelled: r.cancelled_bookings ?? items.filter((b) => b.status === "cancelled").length,
         });
       } else {
         setAllBookings([]);
