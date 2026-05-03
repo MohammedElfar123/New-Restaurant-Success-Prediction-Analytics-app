@@ -14,41 +14,44 @@ import {
 import { getAdminTourSteps, ADMIN_TOUR_STORAGE_KEY } from "@/lib/tours/adminTour";
 
 /**
- * Auto-starts the guided tour and orchestrates multi-page navigation.
+ * Auto-starts the guided tour and orchestrates navigation —
+ * including the tricky case where the user manually clicks somewhere
+ * during the tour.
  *
- * Three triggers:
- *   1. First-time auto-start — user lands on the panel's launchpad
- *      route (provider/dashboard or admin/users) and has not seen the
- *      tour before (`localStorage` gate).
- *   2. Resume after navigation — when a tour step lives on a different
- *      page, we save the next step index to `sessionStorage` and push
- *      the route. When this component remounts on the new page, we
- *      read the resume flag and continue from that step.
- *   3. Manual relaunch — TourLauncherButton clears the localStorage
- *      gate and drives the tour directly (no resume state involved).
- *
- * driver.js itself only knows about a single page. This component is
- * the bridge that turns a list of cross-page steps into a continuous
- * walkthrough.
+ * Three triggers + one safety net:
+ *   1. First-time auto-start: user lands on the launchpad route
+ *      (provider/dashboard or admin/users) and has not seen the tour.
+ *   2. Tour-driven navigation: a step's onNextClick saves the next
+ *      step's index and pushes to its route. The new page mounts,
+ *      reads the resume flag, and continues.
+ *   3. Manual relaunch: TourLauncherButton sets the resume flag at
+ *      index 0 and dispatches "tour:replay".
+ *   4. SAFETY NET — user manually navigates mid-tour: pathname
+ *      changes, the cleanup function captures the active step index
+ *      from driver.js and saves a resume marker. The new page then
+ *      reads it and continues, but only if the new pathname actually
+ *      matches a step's route. Otherwise we abort gracefully.
  */
 export default function TourProvider({ scope = "provider" }) {
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations(`tour.${scope}`);
-  const { user, providerType: storedProviderType, userType } = useAuthStore();
+  const { user, providerType: storedProviderType } = useAuthStore();
   const isRTL = locale === "ar";
-  const startedRef = useRef(false);
+
+  // The active driver.js instance, kept on a ref so the cleanup
+  // function can introspect it when pathname changes mid-tour.
+  const tourInstanceRef = useRef(null);
+
+  // Bumps when the launcher button fires "tour:replay", so the effect
+  // re-runs even if pathname did not change (replay from the launchpad).
+  const [replayTick, setReplayTick] = useState(0);
 
   const providerType =
     storedProviderType || user?.provider?.type || user?.type || "Provider";
 
-  // Bumps every time the launcher button fires a "tour:replay" event,
-  // so an already-mounted TourProvider re-runs its effect even when
-  // the user is already on the launchpad route (router.push to the
-  // same path is a no-op and would not trigger useEffect otherwise).
-  const [replayTick, setReplayTick] = useState(0);
-
+  // Listen for replay events from the launcher button.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const handler = () => setReplayTick((n) => n + 1);
@@ -60,13 +63,11 @@ export default function TourProvider({ scope = "provider" }) {
     if (typeof window === "undefined") return;
     if (!user) return;
 
-    // Scope guard: provider tour only on provider routes; same for admin.
+    // Scope guard
     const onProviderRoute = pathname.includes("/provider/");
     const onAdminRoute = pathname.includes("/admin/");
     if (scope === "provider" && !onProviderRoute) return;
     if (scope === "admin" && !onAdminRoute) return;
-
-    if (startedRef.current) return;
 
     const storageKey =
       scope === "provider" ? PROVIDER_TOUR_STORAGE_KEY : ADMIN_TOUR_STORAGE_KEY;
@@ -76,12 +77,11 @@ export default function TourProvider({ scope = "provider" }) {
         : getAdminTourSteps(t, locale);
     if (!steps.length) return;
 
-    // Strip the locale prefix so step.route comparisons are clean.
+    // Strip the locale prefix (/ar, /en) so step.route comparisons line up.
     const stripLocale = (p) => p.replace(/^\/[a-z]{2}(?=\/)/, "");
     const currentRoute = stripLocale(pathname);
 
-    // Decide whether to start. Resume flag wins; otherwise auto-start
-    // only on the launchpad if the user has not seen the tour.
+    // Decide whether we should drive a tour on this page.
     const resumeRaw = window.sessionStorage.getItem(TOUR_RESUME_KEY);
     let resumeIndex = null;
     if (resumeRaw) {
@@ -91,36 +91,45 @@ export default function TourProvider({ scope = "provider" }) {
           resumeIndex = parsed.stepIndex;
         }
       } catch {
-        // corrupt — ignore + clear
+        // ignore corrupt
       }
+      // We always consume the flag — if validation fails below we
+      // abort, otherwise we drive. Either way it should not stick.
       window.sessionStorage.removeItem(TOUR_RESUME_KEY);
     }
 
     const onLaunchpad =
       pathname.endsWith(`/${scope}/dashboard`) ||
-      pathname.endsWith(`/${scope}/users`); // admin landing
+      pathname.endsWith(`/${scope}/users`);
     const seen = window.localStorage.getItem(storageKey) === "true";
 
     if (resumeIndex === null) {
+      // No resume → auto-start only on the launchpad for first-time users.
       if (!onLaunchpad) return;
       if (seen) return;
-    }
-
-    // Confirm the resume step actually belongs on this page; if the
-    // user navigated away mid-tour to somewhere unexpected, abort the
-    // resume rather than fire on the wrong page.
-    if (resumeIndex !== null) {
+    } else {
+      // Resume flag present. The user might have been navigated by the
+      // tour itself (good) or might have manually clicked somewhere
+      // odd (bad). Validate that the resume step actually fits this
+      // page; if not, look for the FIRST step whose route matches
+      // current pathname and resume there. If nothing matches, abort.
       const expectedRoute = steps[resumeIndex]?.route;
       if (expectedRoute && expectedRoute !== currentRoute) {
-        return;
+        const fallbackIndex = steps.findIndex(
+          (s) => s.route && s.route === currentRoute
+        );
+        if (fallbackIndex === -1) {
+          // Tour cannot continue here. Drop the gate so it can auto-fire
+          // from the launchpad if the user goes back.
+          return;
+        }
+        resumeIndex = fallbackIndex;
       }
     }
 
-    // Wait for the DOM to mount the data-tour anchors before driving.
-    // 400ms covers the slowest pages we have; cheaper than guessing
-    // mount completion via MutationObserver for one-time use.
+    // We need a moment for the data-tour anchors to mount on the new
+    // page. 400ms covers all current pages.
     const timeout = setTimeout(() => {
-      startedRef.current = true;
       const tour = driver({
         showProgress: true,
         animate: true,
@@ -135,21 +144,19 @@ export default function TourProvider({ scope = "provider" }) {
           ? "الخطوة {{current}} من {{total}}"
           : "Step {{current}} of {{total}}",
         onDestroyed: () => {
-          // Only mark "seen" if we finished or the user explicitly
-          // closed. Resume-driven destroys don't count as seen because
-          // we set the resume flag before destroying.
+          // Only mark "seen" when the user finished or closed normally.
+          // If we destroyed because of a navigation handoff, the resume
+          // flag is set; do not mark seen in that case.
           if (!window.sessionStorage.getItem(TOUR_RESUME_KEY)) {
             window.localStorage.setItem(storageKey, "true");
           }
-          startedRef.current = false;
+          tourInstanceRef.current = null;
         },
       });
 
-      // Wrap each step's `onNextClick` so cross-page transitions
-      // (current step's route !== next step's route) navigate first
-      // and stash a resume marker. Driver.js calls onNextClick instead
-      // of moveNext when it's defined, so we explicitly call moveNext
-      // for in-page transitions.
+      // Wrap each step's onNextClick to either (a) navigate forward
+      // when the next step lives on a different route or (b) advance
+      // normally when it does not.
       const wrappedSteps = steps.map((step, idx) => {
         const next = steps[idx + 1];
         const needsNav =
@@ -170,15 +177,62 @@ export default function TourProvider({ scope = "provider" }) {
               }
               tour.moveNext();
             },
+            // Same idea for "Previous": if we'd have to go back to a
+            // different page, navigate + stash the resume.
+            onPrevClick: () => {
+              const prev = steps[idx - 1];
+              const needsBackNav =
+                prev && prev.route && step.route && prev.route !== step.route;
+              if (needsBackNav) {
+                window.sessionStorage.setItem(
+                  TOUR_RESUME_KEY,
+                  JSON.stringify({ scope, stepIndex: idx - 1 })
+                );
+                tour.destroy();
+                router.push(`/${locale}${prev.route}`);
+                return;
+              }
+              tour.movePrevious();
+            },
           },
         };
       });
 
       tour.setSteps(wrappedSteps);
       tour.drive(resumeIndex ?? 0);
+      tourInstanceRef.current = tour;
     }, 400);
 
-    return () => clearTimeout(timeout);
+    // Cleanup runs on pathname change OR component unmount. If the
+    // tour is still active when this happens, capture the current
+    // step index and stash a resume marker so the next mount can
+    // continue from there. This is the safety net that handles the
+    // case where the user manually navigates mid-tour.
+    return () => {
+      clearTimeout(timeout);
+      const active = tourInstanceRef.current;
+      if (!active) return;
+      try {
+        if (typeof active.isActive === "function" && active.isActive()) {
+          const idx =
+            typeof active.getActiveIndex === "function"
+              ? active.getActiveIndex()
+              : null;
+          if (typeof idx === "number") {
+            window.sessionStorage.setItem(
+              TOUR_RESUME_KEY,
+              JSON.stringify({ scope, stepIndex: idx })
+            );
+          }
+        }
+        active.destroy();
+      } catch {
+        // best-effort — if driver internals changed shape, fall through
+      }
+      tourInstanceRef.current = null;
+    };
+    // We INTENTIONALLY include replayTick so that the launcher button
+    // can re-trigger the effect even when pathname did not change.
   }, [pathname, user, providerType, scope, locale, t, isRTL, router, replayTick]);
 
   return null;
