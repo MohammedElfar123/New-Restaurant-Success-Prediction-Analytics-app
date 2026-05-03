@@ -336,7 +336,7 @@ export default function ProviderDoctorsPage() {
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             {isRTL ? "تصدير" : "Export"}
           </Button>
-          <Button className="gap-2 h-10" onClick={handleOpenCreate}>
+          <Button data-tour="doctors-add" className="gap-2 h-10" onClick={handleOpenCreate}>
             <Plus className="w-4 h-4" />
             {isRTL ? "إضافة طبيب" : "Add Doctor"}
           </Button>
@@ -477,7 +477,7 @@ export default function ProviderDoctorsPage() {
           </div>
 
           {/* Table */}
-          <div className="overflow-visible">
+          <div data-tour="doctors-table" className="overflow-visible">
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
                 <div className="text-center">

@@ -196,7 +196,7 @@ export default function ProviderDashboardPage() {
   return (
     <DashboardLayout requiredUserType="provider">
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div data-tour="welcome" className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
             <div className="h-10 w-10 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -222,7 +222,7 @@ export default function ProviderDashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div data-tour="dashboard-stats" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <Card className="border-slate-200 hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -317,7 +317,7 @@ export default function ProviderDashboardPage() {
 
       {/* Recent Bookings Table + Quick Info */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+        <div data-tour="dashboard-recent-bookings" className="lg:col-span-2">
           <Card className="border-slate-200 shadow-sm">
             <CardContent className="p-0">
               <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50">
