@@ -32,6 +32,7 @@ import {
   Cog,
   BarChart3,
   Banknote,
+  CreditCard as CreditCardIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import TourLauncherButton from "@/components/tours/TourLauncherButton";
@@ -144,6 +145,18 @@ export default function Sidebar({ userType, locale }) {
       badge: newHospitalCount > 0 ? (newHospitalCount > 99 ? "99+" : String(newHospitalCount)) : null,
       permission: PERMISSIONS.BOOKINGS_VIEW,
       tourId: "admin-sidebar-bookings-hospitals",
+    },
+    {
+      // Sadad transactions viewer — read-only finance surface. Same
+      // permission gate as refunds since both are payment data.
+      name: t("transactions"),
+      href: `/${locale}/admin/transactions`,
+      icon: CreditCardIcon,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+      badge: null,
+      permission: PERMISSIONS.BOOKINGS_VIEW,
+      tourId: "admin-sidebar-transactions",
     },
     {
       // Refund queue — gated on BOOKINGS_VIEW so any admin who can see
