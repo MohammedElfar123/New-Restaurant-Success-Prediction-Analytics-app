@@ -7,6 +7,7 @@ import { useNotificationStore } from "@/stores/notificationStore";
 import { useParams } from "next/navigation";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import TourProvider from "@/components/tours/TourProvider";
 
 export default function DashboardLayout({ children, requiredUserType }) {
   const router = useRouter();
@@ -83,6 +84,11 @@ export default function DashboardLayout({ children, requiredUserType }) {
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
+
+      {/* Auto-starting guided tour. Renders nothing until the user is on
+          the panel landing page for the first time. */}
+      {requiredUserType === "provider" && <TourProvider scope="provider" />}
+      {requiredUserType === "admin" && <TourProvider scope="admin" />}
     </div>
   );
 }

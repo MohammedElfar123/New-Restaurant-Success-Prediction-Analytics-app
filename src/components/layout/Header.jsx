@@ -201,7 +201,7 @@ export default function Header() {
         </Button>
 
         {/* Notifications Bell */}
-        <div className="relative" ref={notifRef}>
+        <div data-tour="header-notifications" className="relative" ref={notifRef}>
           <Button
             variant="ghost"
             size="icon"

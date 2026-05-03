@@ -33,6 +33,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import TourLauncherButton from "@/components/tours/TourLauncherButton";
 
 export default function Sidebar({ userType, locale }) {
   const pathname = usePathname();
@@ -89,7 +90,9 @@ export default function Sidebar({ userType, locale }) {
     });
   }, [settingsSubNav, hasPermission]);
 
-  // Admin navigation with permissions
+  // Admin navigation with permissions.
+  // tourId values map 1:1 to data-tour="..." selectors in adminTour.js;
+  // changing one without the other breaks the in-app guided tour.
   const adminNavigation = useMemo(() => [
     {
       name: t("users"),
@@ -99,6 +102,7 @@ export default function Sidebar({ userType, locale }) {
       bgColor: "bg-blue-50",
       badge: null,
       permission: PERMISSIONS.CLIENTS_VIEW,
+      tourId: "admin-sidebar-users",
     },
     {
       name: t("providers"),
@@ -108,6 +112,7 @@ export default function Sidebar({ userType, locale }) {
       bgColor: "bg-teal-50",
       badge: null,
       permission: PERMISSIONS.PROVIDERS_VIEW,
+      tourId: "admin-sidebar-providers",
     },
     {
       name: t("doctorBookings"),
@@ -117,6 +122,7 @@ export default function Sidebar({ userType, locale }) {
       bgColor: "bg-emerald-50",
       badge: newDoctorCount > 0 ? (newDoctorCount > 99 ? "99+" : String(newDoctorCount)) : null,
       permission: PERMISSIONS.BOOKINGS_VIEW,
+      tourId: "admin-sidebar-bookings-doctors",
     },
     {
       name: t("clinicBookings"),
@@ -126,6 +132,7 @@ export default function Sidebar({ userType, locale }) {
       bgColor: "bg-purple-50",
       badge: newClinicCount > 0 ? (newClinicCount > 99 ? "99+" : String(newClinicCount)) : null,
       permission: PERMISSIONS.BOOKINGS_VIEW,
+      tourId: "admin-sidebar-bookings-clinics",
     },
     {
       name: t("hospitalBookings"),
@@ -135,6 +142,7 @@ export default function Sidebar({ userType, locale }) {
       bgColor: "bg-blue-50",
       badge: newHospitalCount > 0 ? (newHospitalCount > 99 ? "99+" : String(newHospitalCount)) : null,
       permission: PERMISSIONS.BOOKINGS_VIEW,
+      tourId: "admin-sidebar-bookings-hospitals",
     },
     {
       name: t("sliders"),
@@ -144,6 +152,7 @@ export default function Sidebar({ userType, locale }) {
       bgColor: "bg-indigo-50",
       badge: null,
       permission: PERMISSIONS.SLIDERS_VIEW,
+      tourId: "admin-sidebar-sliders",
     },
     {
       name: t("notifications"),
@@ -153,6 +162,7 @@ export default function Sidebar({ userType, locale }) {
       bgColor: "bg-pink-50",
       badge: null,
       permission: PERMISSIONS.NOTIFICATIONS_VIEW,
+      tourId: "admin-sidebar-notifications",
     },
     {
       name: t("statistics") || "Statistics",
@@ -162,6 +172,7 @@ export default function Sidebar({ userType, locale }) {
       bgColor: "bg-orange-50",
       badge: null,
       permission: PERMISSIONS.BOOKINGS_VIEW,
+      tourId: "admin-sidebar-statistics",
     },
     {
       name: t("admins"),
@@ -171,6 +182,7 @@ export default function Sidebar({ userType, locale }) {
       bgColor: "bg-slate-100",
       badge: null,
       permission: PERMISSIONS.ADMINS_VIEW,
+      tourId: "admin-sidebar-admins",
     },
   ], [locale, t, newDoctorCount, newClinicCount, newHospitalCount]);
 
@@ -180,7 +192,10 @@ export default function Sidebar({ userType, locale }) {
   const isClinicOrHospital = providerType === "Clinic" || providerType === "Hospital";
 
   // Provider navigation - unified for all provider types under /provider/ routes
-  // Only includes pages with real backend API endpoints
+  // Only includes pages with real backend API endpoints.
+  //
+  // tourId values map 1:1 to data-tour="..." selectors in providerTour.js;
+  // changing one without the other breaks the in-app guided tour.
   const providerNavigation = useMemo(() => {
     const items = [
       {
@@ -189,6 +204,7 @@ export default function Sidebar({ userType, locale }) {
         icon: LayoutDashboard,
         color: "text-emerald-600",
         bgColor: "bg-emerald-50",
+        tourId: "sidebar-dashboard",
       },
       {
         name: t("appointments"),
@@ -197,6 +213,7 @@ export default function Sidebar({ userType, locale }) {
         color: "text-purple-500",
         bgColor: "bg-purple-50",
         badge: newBookingsCount > 0 ? (newBookingsCount > 99 ? "99+" : String(newBookingsCount)) : null,
+        tourId: "sidebar-bookings",
       },
     ];
 
@@ -208,6 +225,7 @@ export default function Sidebar({ userType, locale }) {
         icon: Stethoscope,
         color: "text-teal-500",
         bgColor: "bg-teal-50",
+        tourId: "sidebar-doctors",
       });
     }
 
@@ -218,6 +236,7 @@ export default function Sidebar({ userType, locale }) {
         icon: BarChart3,
         color: "text-orange-500",
         bgColor: "bg-orange-50",
+        tourId: "sidebar-statistics",
       },
       {
         name: t("profile"),
@@ -225,6 +244,7 @@ export default function Sidebar({ userType, locale }) {
         icon: UserCircle,
         color: "text-blue-500",
         bgColor: "bg-blue-50",
+        tourId: "sidebar-profile",
       },
       {
         name: t("admins"),
@@ -232,6 +252,7 @@ export default function Sidebar({ userType, locale }) {
         icon: UserCog,
         color: "text-slate-600",
         bgColor: "bg-slate-100",
+        tourId: "sidebar-team",
       },
       {
         name: t("settings"),
@@ -239,6 +260,7 @@ export default function Sidebar({ userType, locale }) {
         icon: Settings,
         color: "text-slate-500",
         bgColor: "bg-slate-50",
+        tourId: "sidebar-settings",
       },
     );
 
@@ -461,6 +483,7 @@ export default function Sidebar({ userType, locale }) {
                 <Link
                   key={item.name}
                   href={item.href}
+                  data-tour={item.tourId}
                   onMouseEnter={() => setHoveredItem(item.name)}
                   onMouseLeave={() => setHoveredItem(null)}
                   className={cn(
@@ -536,7 +559,7 @@ export default function Sidebar({ userType, locale }) {
 
             {/* Settings Section (Expandable) */}
             {showSettingsSection && (
-              <div className="pt-2">
+              <div data-tour="admin-settings-section" className="pt-2">
                 {/* Settings Header */}
                 <button
                   onClick={() => setSettingsExpanded(!settingsExpanded)}
@@ -602,7 +625,11 @@ export default function Sidebar({ userType, locale }) {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-border/50 p-4 bg-card/50 backdrop-blur-sm">
+      <div className="border-t border-border/50 p-4 bg-card/50 backdrop-blur-sm space-y-3">
+        {/* Tour launcher — picks the right scope based on the panel. */}
+        {isProviderPanel && <TourLauncherButton scope="provider" />}
+        {!isProviderPanel && userType === "admin" && <TourLauncherButton scope="admin" />}
+
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
           <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
           <span className="font-medium">© 2026 Mawadk</span>

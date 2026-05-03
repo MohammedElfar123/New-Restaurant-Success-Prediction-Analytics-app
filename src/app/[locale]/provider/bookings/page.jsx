@@ -327,7 +327,7 @@ export default function ProviderBookingsPage() {
         {/* Tabs Header */}
         <div className="border-b border-slate-200">
           <div className="flex items-center justify-between px-6">
-            <div className="flex items-center gap-0 overflow-x-auto">
+            <div data-tour="bookings-tabs" className="flex items-center gap-0 overflow-x-auto">
               {[
                 { key: "all", label: isRTL ? "الكل" : "All", icon: Calendar, count: stats.total },
                 { key: "pending", label: isRTL ? "معلق" : "Pending", icon: Clock, count: stats.pending },
@@ -358,7 +358,7 @@ export default function ProviderBookingsPage() {
                 );
               })}
             </div>
-            <div className="relative py-3">
+            <div data-tour="bookings-search" className="relative py-3">
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 placeholder={isRTL ? "بحث بالاسم، الهاتف، الفاتورة..." : "Search name, phone, invoice..."}
@@ -371,7 +371,7 @@ export default function ProviderBookingsPage() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div data-tour="bookings-table" className="overflow-x-auto">
           {isLoading ? (
             <div className="text-center py-12">
               <Loader2 className="h-8 w-8 text-primary animate-spin mx-auto mb-4" />

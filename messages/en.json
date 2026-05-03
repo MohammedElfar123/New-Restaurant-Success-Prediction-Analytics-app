@@ -418,7 +418,6 @@
     "viewDetails": "View Details",
     "deactivateAccount": "Deactivate Account",
     "activateAccount": "Activate Account",
-    "deleteUser": "Delete User",
     "restoreUser": "Restore User",
     "deletedUsers": "Deleted Users",
     "canRestore": "Can be restored",
@@ -1163,5 +1162,133 @@
     "updatedAt": "Last Updated",
     "showing": "Showing",
     "of": "of"
+  },
+  "tour": {
+    "provider": {
+      "launcher": {
+        "label": "🎓 Take the tour"
+      },
+      "welcome": {
+        "title": "Welcome to your Mawaeidk dashboard",
+        "description": "In about a minute you'll learn what each section does. You can skip the tour any time with the close button, and replay it from the 'Take the tour' button in the sidebar."
+      },
+      "dashboardNav": {
+        "title": "Home",
+        "description": "Returns you to the dashboard from anywhere. The dashboard shows a quick summary of your bookings and key numbers."
+      },
+      "dashboardStats": {
+        "title": "Statistics cards",
+        "description": "Four cards with your headline numbers: total bookings, completed, confirmed, and pending. They refresh automatically."
+      },
+      "dashboardRecent": {
+        "title": "Recent bookings",
+        "description": "Your five most recent bookings, newest first. Click any row to open the full detail."
+      },
+      "bookingsNav": {
+        "title": "Bookings",
+        "description": "All your patient bookings in one place, organised by status. You'll spend most of your time here."
+      },
+      "bookingsTabs": {
+        "title": "Status tabs",
+        "description": "Pick which status to view: pending awaiting confirmation, confirmed ready for the visit, completed, or cancelled. The number on each tab tells you how many."
+      },
+      "bookingsSearch": {
+        "title": "Search and filter",
+        "description": "Search by patient name or phone, or filter by date. Useful when you have a lot of bookings."
+      },
+      "bookingsTable": {
+        "title": "Bookings table",
+        "description": "Every booking has a row with patient name, date, time, payment method, and status. The eye icon opens detail; from there you can confirm or cancel."
+      },
+      "doctorsNav": {
+        "title": "Doctors",
+        "description": "Manage the doctors that work under your facility. Add new doctors, edit their info, or temporarily disable them."
+      },
+      "doctorsAdd": {
+        "title": "Add a doctor",
+        "description": "Click here to open the new-doctor form: name, specialty, price, schedule, and a profile photo."
+      },
+      "doctorsTable": {
+        "title": "Doctors list",
+        "description": "Each doctor has buttons for view, edit, enable/disable, and delete. Changes are reflected immediately on the patient app."
+      },
+      "statisticsNav": {
+        "title": "Statistics",
+        "description": "Detailed reports on your performance: bookings over time, confirmation/cancellation rates, revenue. Helpful for tracking growth."
+      },
+      "profileNav": {
+        "title": "Profile",
+        "description": "Edit what patients see on the Mawaeidk app: photo, description, working hours, and location on the map."
+      },
+      "teamNav": {
+        "title": "Team",
+        "description": "Add team members who can sign into the panel with you. Control each member's permissions — who can manage bookings, add doctors, and so on."
+      },
+      "settingsNav": {
+        "title": "Settings",
+        "description": "Change your password, language preferences, and notification settings."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "The bell icon shows a notification every time you get a new booking. The red badge counts unread items."
+      },
+      "relaunch": {
+        "title": "Replay the tour",
+        "description": "Click this button in the sidebar any time to replay this tour. Useful when a new team member joins."
+      },
+      "done": {
+        "title": "All done! 🎉",
+        "description": "You've seen every section of the panel. You can start using it with confidence. The tour button is always there in the sidebar if you need a refresher."
+      }
+    },
+    "admin": {
+      "launcher": {
+        "label": "🎓 Take the tour"
+      },
+      "welcome": {
+        "title": "Welcome to the Mawaeidk admin panel",
+        "description": "In about a minute you'll learn what each section does. Skip any time with close, or replay from the tour button in the sidebar."
+      },
+      "usersNav": {
+        "title": "Customers (Patients)",
+        "description": "All patients registered in the Mawaeidk app. View their info, enable/disable accounts, or delete with extra verification."
+      },
+      "providersNav": {
+        "title": "Service providers",
+        "description": "All providers (doctors/clinics/hospitals). Add a new one, edit their info, or disable an account."
+      },
+      "bookingsNav": {
+        "title": "Bookings",
+        "description": "Every booking on the platform, split by provider type: doctor, clinic, hospital. Each has its own dedicated page."
+      },
+      "slidersNav": {
+        "title": "Banners",
+        "description": "Banners shown at the top of the home screen of the patient app. Use them for promos or seasonal announcements."
+      },
+      "notificationsNav": {
+        "title": "Notifications",
+        "description": "Send push notifications to all patients or a specific group. Useful for maintenance windows, app updates, or flash offers."
+      },
+      "statisticsNav": {
+        "title": "Statistics",
+        "description": "Platform-wide reports: bookings, revenue, confirm/cancel rates, monthly growth."
+      },
+      "adminsNav": {
+        "title": "Admins",
+        "description": "Manage the admin team. Add new admins, set per-admin permissions, or pause one. Each admin gets a specific permission set (view, edit, delete, ...)."
+      },
+      "settingsNav": {
+        "title": "Settings",
+        "description": "General settings, medical categories, FAQs, and info pages (privacy policy, terms of service)."
+      },
+      "headerNotifications": {
+        "title": "System notifications",
+        "description": "The bell icon shows system events: bookings needing review, refund requests, or any urgent alert."
+      },
+      "done": {
+        "title": "All done! 🎉",
+        "description": "You've seen every section of the admin panel. The tour button is always there in the sidebar if you want a refresher."
+      }
+    }
   }
 }
