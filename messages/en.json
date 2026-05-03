@@ -88,7 +88,8 @@
     "sliders": "Sliders",
     "cities": "Cities & Select",
     "statistics": "Statistics",
-    "noAccess": "No access to any modules"
+    "noAccess": "No access to any modules",
+    "refunds": "Refunds"
   },
   "dashboard": {
     "dashboard": "Dashboard",
@@ -1289,6 +1290,89 @@
         "title": "All done! 🎉",
         "description": "You've seen every section of the admin panel. The tour button is always there in the sidebar if you want a refresher."
       }
+    }
+  },
+  "refunds": {
+    "title": "Refunds",
+    "subtitle": "Manage refund requests for paid bookings that were cancelled",
+    "tabs": {
+      "pendingActions": "Pending action",
+      "all": "All refunds"
+    },
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "sent": "Sent to gateway",
+      "success": "Success",
+      "failed": "Failed"
+    },
+    "table": {
+      "transactionId": "Transaction ID",
+      "patient": "Patient",
+      "amount": "Amount",
+      "reason": "Reason",
+      "status": "Status",
+      "occurredAt": "Requested at",
+      "createdAt": "Created at",
+      "refundedAt": "Refunded at",
+      "gatewayRef": "Gateway ref",
+      "actions": "Actions",
+      "admin": "Admin"
+    },
+    "actions": {
+      "startRefund": "Start refund",
+      "markProcessed": "Mark processed",
+      "markFailed": "Mark failed",
+      "view": "View"
+    },
+    "status": {
+      "pending": "Pending",
+      "sent_to_gateway": "Sent to gateway",
+      "success": "Success",
+      "failed": "Failed"
+    },
+    "createDialog": {
+      "title": "Create refund request",
+      "subtitle": "Details of the transaction to refund",
+      "transactionLabel": "Transaction ID",
+      "amountLabel": "Refund amount (QAR)",
+      "amountHint": "Cannot exceed the original transaction amount",
+      "reasonLabel": "Refund reason",
+      "reasonPlaceholder": "Why is this refund needed? e.g. patient cancelled after payment",
+      "submit": "Create refund request",
+      "cancel": "Cancel",
+      "originalAmount": "Original amount:"
+    },
+    "processedDialog": {
+      "title": "Confirm refund executed",
+      "subtitle": "Enter the gateway reference from Sadad after pushing the refund manually",
+      "refLabel": "Sadad refund reference",
+      "refPlaceholder": "e.g. SDD-RFND-12345",
+      "refHint": "Find this on the refund receipt in your Sadad merchant portal",
+      "submit": "Confirm executed",
+      "cancel": "Cancel"
+    },
+    "failedDialog": {
+      "title": "Record refund failure",
+      "subtitle": "Why did the gateway reject the refund?",
+      "reasonLabel": "Failure reason",
+      "reasonPlaceholder": "e.g. insufficient merchant balance, or transaction already cancelled at gateway",
+      "submit": "Record failure",
+      "cancel": "Cancel"
+    },
+    "empty": {
+      "noPending": "No refunds need action right now",
+      "noPendingDesc": "Every paid-and-cancelled booking has been handled — well done!",
+      "noRefunds": "No refunds yet",
+      "noRefundsDesc": "Refund records will appear here once the first one is created"
+    },
+    "toasts": {
+      "createSuccess": "Refund request created. Now open Sadad portal to complete it.",
+      "processedSuccess": "Refund confirmed as executed. Booking status updated.",
+      "failedSuccess": "Refund failure recorded. Reach out to the gateway for next steps.",
+      "createError": "Failed to create refund request",
+      "processedError": "Failed to confirm execution",
+      "failedError": "Failed to record"
     }
   }
 }
