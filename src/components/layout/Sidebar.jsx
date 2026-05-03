@@ -31,6 +31,7 @@ import {
   HelpCircle,
   Cog,
   BarChart3,
+  Banknote,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import TourLauncherButton from "@/components/tours/TourLauncherButton";
@@ -143,6 +144,19 @@ export default function Sidebar({ userType, locale }) {
       badge: newHospitalCount > 0 ? (newHospitalCount > 99 ? "99+" : String(newHospitalCount)) : null,
       permission: PERMISSIONS.BOOKINGS_VIEW,
       tourId: "admin-sidebar-bookings-hospitals",
+    },
+    {
+      // Refund queue — gated on BOOKINGS_VIEW so any admin who can see
+      // bookings can also action refunds. A dedicated REFUNDS_* set of
+      // permissions can land later if the team grows enough to want it.
+      name: t("refunds"),
+      href: `/${locale}/admin/refunds`,
+      icon: Banknote,
+      color: "text-amber-600",
+      bgColor: "bg-amber-50",
+      badge: null,
+      permission: PERMISSIONS.BOOKINGS_VIEW,
+      tourId: "admin-sidebar-refunds",
     },
     {
       name: t("sliders"),
