@@ -89,7 +89,8 @@
     "cities": "المدن والقوائم",
     "statistics": "الإحصائيات",
     "noAccess": "لا يوجد صلاحية للوصول لأي قسم",
-    "refunds": "المبالغ المستردة"
+    "refunds": "المبالغ المستردة",
+    "transactions": "المعاملات المالية"
   },
   "dashboard": {
     "dashboard": "لوحة التحكم",
@@ -1370,6 +1371,86 @@
       "createError": "فشل إنشاء طلب الاسترداد",
       "processedError": "فشل تأكيد التنفيذ",
       "failedError": "فشل تسجيل العملية"
+    }
+  },
+  "transactions": {
+    "title": "المعاملات المالية",
+    "subtitle": "كل عمليات الدفع عبر بوابة سداد — للمراجعة والتسوية اليومية",
+    "filters": {
+      "all": "الكل",
+      "search": "بحث بالرقم المرجعي",
+      "fromDate": "من تاريخ",
+      "toDate": "إلى تاريخ",
+      "apply": "تطبيق",
+      "reset": "إعادة تعيين"
+    },
+    "status": {
+      "initiated": "بدأت",
+      "sent_to_gateway": "أُرسلت للبنك",
+      "success": "ناجحة",
+      "failed": "فاشلة",
+      "expired": "منتهية الصلاحية",
+      "cancelled": "ملغية"
+    },
+    "table": {
+      "id": "#",
+      "orderRef": "الرقم المرجعي",
+      "amount": "المبلغ",
+      "status": "الحالة",
+      "method": "طريقة الدفع",
+      "patient": "المريض",
+      "initiatedAt": "بدأت في",
+      "completedAt": "اكتملت في",
+      "actions": "إجراءات"
+    },
+    "actions": {
+      "view": "تفاصيل"
+    },
+    "detail": {
+      "title": "تفاصيل المعاملة",
+      "section": {
+        "transaction": "بيانات المعاملة",
+        "booking": "الحجز المرتبط",
+        "events": "سجل الأحداث"
+      },
+      "fields": {
+        "gateway": "البنك",
+        "orderRef": "رقم الطلب",
+        "txRef": "رقم المعاملة من البنك",
+        "method": "طريقة الدفع",
+        "amount": "المبلغ",
+        "currency": "العملة",
+        "status": "الحالة",
+        "initiatedAt": "وقت البدء",
+        "completedAt": "وقت الاكتمال",
+        "expiresAt": "ينتهي في",
+        "idempotencyKey": "مفتاح الـ idempotency",
+        "failureReason": "سبب الفشل",
+        "bookingNumber": "رقم الفاتورة",
+        "bookingDate": "تاريخ الموعد",
+        "bookingTime": "وقت الموعد",
+        "bookingStatus": "حالة الحجز",
+        "paymentStatus": "حالة الدفع",
+        "patient": "المريض",
+        "phone": "الهاتف",
+        "email": "الإيميل"
+      },
+      "noBooking": "لا يوجد حجز مرتبط بهذه المعاملة",
+      "noEvents": "لا توجد أحداث مسجلة",
+      "close": "إغلاق"
+    },
+    "reconciliation": {
+      "title": "التسوية اليومية",
+      "subtitle": "ملخص المعاملات حسب التاريخ — قارنه بتقرير سداد اليومي",
+      "selectDate": "اختر التاريخ",
+      "loading": "جاري التحميل...",
+      "totalCount": "إجمالي المعاملات",
+      "totalAmount": "إجمالي المبلغ",
+      "noData": "لا توجد معاملات في هذا التاريخ"
+    },
+    "empty": {
+      "noTransactions": "لا توجد معاملات",
+      "noTransactionsDesc": "ستظهر المعاملات هنا عند بدء العملاء بالدفع"
     }
   }
 }

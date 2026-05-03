@@ -89,7 +89,8 @@
     "cities": "Cities & Select",
     "statistics": "Statistics",
     "noAccess": "No access to any modules",
-    "refunds": "Refunds"
+    "refunds": "Refunds",
+    "transactions": "Transactions"
   },
   "dashboard": {
     "dashboard": "Dashboard",
@@ -1373,6 +1374,86 @@
       "createError": "Failed to create refund request",
       "processedError": "Failed to confirm execution",
       "failedError": "Failed to record"
+    }
+  },
+  "transactions": {
+    "title": "Transactions",
+    "subtitle": "All Sadad gateway payments — for review and daily reconciliation",
+    "filters": {
+      "all": "All",
+      "search": "Search by reference",
+      "fromDate": "From",
+      "toDate": "To",
+      "apply": "Apply",
+      "reset": "Reset"
+    },
+    "status": {
+      "initiated": "Initiated",
+      "sent_to_gateway": "Sent to gateway",
+      "success": "Success",
+      "failed": "Failed",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    },
+    "table": {
+      "id": "#",
+      "orderRef": "Order ref",
+      "amount": "Amount",
+      "status": "Status",
+      "method": "Method",
+      "patient": "Patient",
+      "initiatedAt": "Initiated",
+      "completedAt": "Completed",
+      "actions": "Actions"
+    },
+    "actions": {
+      "view": "Details"
+    },
+    "detail": {
+      "title": "Transaction details",
+      "section": {
+        "transaction": "Transaction",
+        "booking": "Linked booking",
+        "events": "Event log"
+      },
+      "fields": {
+        "gateway": "Gateway",
+        "orderRef": "Order ref",
+        "txRef": "Gateway tx ref",
+        "method": "Method",
+        "amount": "Amount",
+        "currency": "Currency",
+        "status": "Status",
+        "initiatedAt": "Initiated at",
+        "completedAt": "Completed at",
+        "expiresAt": "Expires at",
+        "idempotencyKey": "Idempotency key",
+        "failureReason": "Failure reason",
+        "bookingNumber": "Invoice #",
+        "bookingDate": "Appointment date",
+        "bookingTime": "Appointment time",
+        "bookingStatus": "Booking status",
+        "paymentStatus": "Payment status",
+        "patient": "Patient",
+        "phone": "Phone",
+        "email": "Email"
+      },
+      "noBooking": "No booking linked to this transaction",
+      "noEvents": "No events recorded yet",
+      "close": "Close"
+    },
+    "reconciliation": {
+      "title": "Daily reconciliation",
+      "subtitle": "Per-status totals for the date — compare against Sadad daily report",
+      "selectDate": "Select date",
+      "loading": "Loading...",
+      "totalCount": "Total transactions",
+      "totalAmount": "Total amount",
+      "noData": "No transactions on this date"
+    },
+    "empty": {
+      "noTransactions": "No transactions yet",
+      "noTransactionsDesc": "Transactions appear here once patients start paying"
     }
   }
 }
