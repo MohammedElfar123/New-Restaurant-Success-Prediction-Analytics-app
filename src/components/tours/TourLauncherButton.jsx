@@ -1,67 +1,55 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
-import { driver } from "driver.js";
-import "driver.js/dist/driver.css";
-import { useAuthStore } from "@/stores/authStore";
 import {
-  getProviderTourSteps,
   PROVIDER_TOUR_STORAGE_KEY,
+  TOUR_RESUME_KEY,
 } from "@/lib/tours/providerTour";
-import { getAdminTourSteps, ADMIN_TOUR_STORAGE_KEY } from "@/lib/tours/adminTour";
+import { ADMIN_TOUR_STORAGE_KEY } from "@/lib/tours/adminTour";
 
 /**
- * Sidebar / profile-menu button that lets the user replay the guided
- * tour any time after the auto-start has fired once.
+ * Sidebar button that replays the guided tour from the start.
  *
- * Clears the localStorage flag and triggers the tour immediately. Sits
- * in the provider sidebar today; an admin variant lands in Phase 2.
+ * The actual driver.js orchestration lives in TourProvider — this
+ * button only flips the resume flag and pushes the user to the
+ * launchpad route. TourProvider on that page picks up the flag and
+ * fires the tour, which means multi-page navigation goes through the
+ * same code path on first launch and on relaunch.
  */
 export default function TourLauncherButton({ scope = "provider", className = "" }) {
   const locale = useLocale();
+  const router = useRouter();
   const t = useTranslations(`tour.${scope}`);
-  const tCommon = useTranslations(`tour.${scope}`);
-  const { user, providerType: storedProviderType } = useAuthStore();
-  const isRTL = locale === "ar";
-
-  const providerType =
-    storedProviderType || user?.provider?.type || user?.type || "Provider";
+  const isRTL = locale === "ar"; // eslint-disable-line @typescript-eslint/no-unused-vars
 
   const handleClick = () => {
     if (typeof window === "undefined") return;
 
+    // Clear the "seen" flag so the auto-start gate re-opens on the
+    // launchpad. Set the resume flag at step 0 so TourProvider knows to
+    // drive even though the localStorage has just been wiped.
     const storageKey =
       scope === "provider" ? PROVIDER_TOUR_STORAGE_KEY : ADMIN_TOUR_STORAGE_KEY;
-
-    // Reset the seen flag so a future first-login on a fresh browser
-    // would still auto-start. Then drive the tour now.
     window.localStorage.removeItem(storageKey);
+    window.sessionStorage.setItem(
+      TOUR_RESUME_KEY,
+      JSON.stringify({ scope, stepIndex: 0 })
+    );
 
-    const steps =
+    // Push to the launchpad. router.push to the SAME path is a no-op,
+    // so we also fire a "tour:replay" event that TourProvider listens
+    // for to force a re-evaluation of its start logic. Either way works:
+    //   - already on launchpad: event triggers, navigation is a no-op
+    //   - on a different page: navigation triggers TourProvider remount,
+    //     event still fires (harmless)
+    const launchpad =
       scope === "provider"
-        ? getProviderTourSteps(t, providerType, locale)
-        : getAdminTourSteps(t, locale);
-
-    if (!steps.length) return;
-
-    const tour = driver({
-      showProgress: true,
-      animate: true,
-      smoothScroll: true,
-      allowClose: true,
-      overlayColor: "#1C2A3A",
-      overlayOpacity: 0.7,
-      nextBtnText: isRTL ? "التالي ←" : "Next →",
-      prevBtnText: isRTL ? "→ السابق" : "← Previous",
-      doneBtnText: isRTL ? "تم" : "Done",
-      progressText: isRTL ? "الخطوة {{current}} من {{total}}" : "Step {{current}} of {{total}}",
-      onDestroyed: () => {
-        window.localStorage.setItem(storageKey, "true");
-      },
-    });
-    tour.setSteps(steps);
-    tour.drive();
+        ? `/${locale}/provider/dashboard`
+        : `/${locale}/admin/users`;
+    router.push(launchpad);
+    window.dispatchEvent(new CustomEvent("tour:replay", { detail: { scope } }));
   };
 
   return (
@@ -70,10 +58,10 @@ export default function TourLauncherButton({ scope = "provider", className = "" 
       data-tour="tour-launcher"
       onClick={handleClick}
       className={`flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg transition-colors ${className}`}
-      aria-label={tCommon("launcher.label")}
+      aria-label={t("launcher.label")}
     >
       <Sparkles className="h-4 w-4 text-amber-500" />
-      <span>{tCommon("launcher.label")}</span>
+      <span>{t("launcher.label")}</span>
     </button>
   );
 }
